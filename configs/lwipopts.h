@@ -241,20 +241,20 @@
 /**
  * LWIP_NETIF_API==1: Support netif api (in netifapi.c)
  */
-#define LWIP_NETIF_API				    1
+#define LWIP_NETIF_API                  1
 
-#define LWIP_DNS					    (1)
+#define LWIP_DNS                        (1)
 
-#define LWIP_NETIF_TX_SINGLE_PBUF      	(1)
+#define LWIP_NETIF_TX_SINGLE_PBUF       (1)
 
-#define LWIP_RAND               		rand
+#define LWIP_RAND                       rand
 
-#define LWIP_FREERTOS_CHECK_CORE_LOCKING	(1)
+#define LWIP_FREERTOS_CHECK_CORE_LOCKING    (1)
 
-#define LWIP_ASSERT_CORE_LOCKED()		sys_check_core_locking()
+#define LWIP_ASSERT_CORE_LOCKED()       sys_check_core_locking()
 
-#define LWIP_NETIF_STATUS_CALLBACK		(1)
-#define LWIP_NETIF_LINK_CALLBACK      	(1)
-#define LWIP_NETIF_REMOVE_CALLBACK    	(1)
+#define LWIP_NETIF_STATUS_CALLBACK      (1)
+#define LWIP_NETIF_LINK_CALLBACK        (1)
+#define LWIP_NETIF_REMOVE_CALLBACK      (1)
 
 extern void sys_check_core_locking() ;

@@ -28,7 +28,10 @@
 # Basic Configuration
 ################################################################################
 
-# Target board/hardware
+# Target board/hardware (BSP).
+# To change the target, use the Library manager ('make modlibs' from command line).
+# If TARGET is manually edited, ensure TARGET_<BSP>.lib with a valid URL exists
+# in the application, and run 'make getlibs' to fetch BSP contents.
 TARGET=CY8CPROTO-062-4343W
 
 # Underscore needed for $(TARGET) directory
@@ -51,8 +54,9 @@ TOOLCHAIN=GCC_ARM
 
 # Default build configuration. Options include:
 #
-# Debug   -- build with minimal optimizations, focus on debugging.
+# Debug -- build with minimal optimizations, focus on debugging.
 # Release -- build with full optimizations
+# Custom -- build with custom configuration, set the optimization flag in CFLAGS
 CONFIG?=Debug
 
 # If set to "true" or "1", display full command-lines when building.
@@ -78,13 +82,6 @@ OTA_SUPPORT=1
 #
 COMPONENTS=FREERTOS LWIP MBEDTLS
 
-# Add connectivity device based on the TARGET board
-ifeq ($(TARGET), CY8CPROTO-062-4343W)
-COMPONENTS+=4343W
-else ifeq ($(TARGET), CY8CKIT-062S2-43012)
-COMPONENTS+=43012
-endif
-
 # Like COMPONENTS, but disable optional code that was enabled by default.
 DISABLE_COMPONENTS=
 
@@ -96,14 +93,14 @@ SOURCES=
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
-INCLUDES=
+INCLUDES=./configs
 
 # Custom configuration of mbedtls library.
-MBEDTLSFLAGS = MBEDTLS_USER_CONFIG_FILE='"configs/mbedtls_user_config.h"'
+MBEDTLSFLAGS = MBEDTLS_USER_CONFIG_FILE='"mbedtls_user_config.h"'
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=$(MBEDTLSFLAGS) CYBSP_WIFI_CAPABLE CY_RETARGET_IO_CONVERT_LF_TO_CRLF
-DEFINES+=CY_SD_HOST_CLK_RAMP_UP_TIME_MS_WAKEUP=0 CY_MQTT_ENABLE_SECURE_TEST_MOSQUITTO_SUPPORT CY_RTOS_AWARE
+DEFINES+=CY_MQTT_ENABLE_SECURE_TEST_MOSQUITTO_SUPPORT CY_RTOS_AWARE
 
 # CY8CPROTO-062-4343W board shares the same GPIO for the user button (SW2)
 # and the CYW4343W host wake up pin. Since this example uses the GPIO for
@@ -322,4 +319,5 @@ $(error Unable to find any of the available CY_TOOLS_PATHS -- $(CY_TOOLS_PATHS))
 endif
 
 $(info Tools Directory: $(CY_TOOLS_DIR))
+
 include $(CY_TOOLS_DIR)/make/start.mk

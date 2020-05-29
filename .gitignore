@@ -13,10 +13,10 @@ libs/*
 
 # Eclipse IDE for ModusToolbox files
 .metadata/
-.settings/
-.cproject
-.project
-.mtbLaunchConfigs/
+# .settings/
+# .cproject
+# .project
+# .mtbLaunchConfigs/
 
 # Eclipse IDE for ModusToolbox build output 
 build/

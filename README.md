@@ -56,12 +56,7 @@ This code example is a dual-core project, where the MCUBoot runs on CM0+ core an
    DEFINES_APP +=-DCY_BOOT_PRIMARY_1_SIZE=0x0EE000
    DEFINES_APP +=-DCY_BOOT_SECONDARY_1_SIZE=0x0EE000
    ```
-4. In file *\<mcuboot>/boot/cypress/MCUBootApp/toolchains.mk* update the TOOLCHAIN Path. 
-
-   ```
-   TOOLCHAIN_PATH ?= c:/Users/$(USERNAME)/ModusToolbox/tools_2.1/gcc-7.2.1
-   ```
-5. Open *\<mcuboot>/boot/cypress/MCUBootApp/config/mcuboot_config/mcuboot_config.h* and comment out the following defines to skip checking the image signature:
+4. Open *\<mcuboot>/boot/cypress/MCUBootApp/config/mcuboot_config/mcuboot_config.h* and comment out the following defines to skip checking the image signature:
 
    ```
    #define MCUBOOT_SIGN_EC256
@@ -79,9 +74,14 @@ This code example is a dual-core project, where the MCUBoot runs on CM0+ core an
 
 1. Open a CLI terminal and navigate to *\<mcuboot>/boot/cypress/*. On Windows, you can use Cygwin to run the make command. To run Cygwin, navigate to the modus-shell directory (*{ModusToolbox install directory}/tools_\<version>/modus-shell*) and run *Cygwin.bat*.
 
-2. Build the application using `make`:  
+2. Build the application using `make`; Specify the toolchain path in the below command:  
     ```
-    make app APP_NAME=MCUBootApp PLATFORM=PSOC_062_2M IMG_TYPE=BOOT CURDIR=$(cygpath --mixed $(pwd))
+    make app APP_NAME=MCUBootApp PLATFORM=PSOC_062_2M IMG_TYPE=BOOT GCC_PATH=<toolchain path> CURDIR=$(cygpath --mixed $(pwd))
+    ```
+    Example:
+
+    ```
+    make app APP_NAME=MCUBootApp PLATFORM=PSOC_062_2M IMG_TYPE=BOOT GCC_PATH=c:/Users/xyz/ModusToolbox/tools_2.1/gcc-7.2.1 CURDIR=$(cygpath --mixed $(pwd))
     ```
 
 ### Programming MCUBoot
@@ -179,7 +179,7 @@ The [test.mosquitto.org](https://test.mosquitto.org/) broker uses the SHA-1 hash
 
    **Figure 1. Connection to MQTT Broker**
 
-   ![Connection to MQTT Broker](images/ConnectionMQTTBroker.png)
+   ![Figure 1](images/connection_mqtt_broker.png)
 
 6. Modify the value of the `BLINKY_DELAY_MS` macro to `(100)` in the *\<Application Name>/source/led_task.c* and change the app version in the *\<Application Name>/Makefile* by setting `APP_VERSION_MINOR` to 1. Build the app, this new image will be published to the MQTT broker to demonstrate OTA update.
 
@@ -223,13 +223,13 @@ The [test.mosquitto.org](https://test.mosquitto.org/) broker uses the SHA-1 hash
 
    **Figure 2. Receiving New Image**
 
-   ![OTAImage](images/OTAImage.png)
+   ![Figure 2](images/download_ota_image.png)
 
 9. Once all chunks are received and are written to the secondary slot in the flash, the device will reboot. MCUBoot will verify the new image, copy it to the primary, and boot the new application.
 
    **Figure 3. Booting New Image**
 
-   ![OTAImage](images/OTAUpdate.png)
+   ![Figure 3](images/perform_ota_update.png)
 
 10. Observe that the user LED now blinking a 10 Hz.
 
@@ -242,7 +242,8 @@ You can debug the example to step through the code. In the IDE, use the **\<Appl
 The flow of the OTA update feature can be represented as shown in Figure 4. The flow consists of three parts: publisher script, MQTT broker, and subscriber device. The subscriber device that requires the OTA update runs the OTA agent and subscribes to an MQTT topic with the broker. The device will later receive the new image from the broker on this topic. The publisher implemented through a python script publishes an upgrade image to the MQTT broker on the same topic.
 
 **Figure 4. Code Example Overview**
-![Overview](images/overview.png)
+
+![Figure 4](images/overview.png)
 
 On the device side, the flow involves building of two applications - MCUBoot-based bootloader and the application that performs OTA.
 
@@ -255,7 +256,8 @@ The application which needs the OTA updates should run the OTA agent. The OTA ag
 The device has an internal flash of size 2 MB. The memory is partitioned into four regions.
 
 **Figure 5. Flash Memory Layout**
-![Flash Layout](images/FlashLayout.jpg)
+
+![Figure 5](images/flash_layout.jpg)
 
 1. Bootloader region of size 72 KB.
 
@@ -320,12 +322,13 @@ Document Title: CE230031 - AnyCloud Example: Over-the-Air Firmware Update Using 
 | Version | Description of Change |
 | ------- | --------------------- |
 | 1.0.0   | New code example      |
+| 1.1.0   | Minor makefile updates to sync with BSP changes |
 
 ------
 
 All other trademarks or registered trademarks referenced herein are the property of their respective owners.
 
-![Banner](images/Banner.png)
+![Banner](images/footer_banner.png)
 
 -------------------------------------------------------------------------------
 

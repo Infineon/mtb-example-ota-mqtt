@@ -107,6 +107,9 @@ int main(void)
                                  CY_RETARGET_IO_BAUDRATE);
     CY_ASSERT(result == CY_RSLT_SUCCESS);
 
+    /* To avoid compiler warning */
+    (void)result;
+    
     /* Enable global interrupts. */
     __enable_irq();
 

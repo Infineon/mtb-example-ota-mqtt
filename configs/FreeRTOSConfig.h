@@ -1,6 +1,8 @@
 /*
- * FreeRTOS Kernel V10.2.0
- * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2019-2020 Cypress Semiconductor Corporation. or a subsidiary of
+ * Cypress Semiconductor Corporation.  All Rights Reserved.
+ *
+ * Updated configuration to support PSoC 6 MCU.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -19,10 +21,9 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
+ * http://www.Cypress.com
  *
- * 1 tab == 4 spaces!
+ *
  */
 
 
@@ -50,13 +51,7 @@
     #include <stdint.h>
     extern uint32_t SystemCoreClock;
 #endif
-
-/* Enable tickless idle and map user defined function */
-#if (CY_CFG_PWR_SYS_IDLE_MODE == CY_CFG_PWR_MODE_SLEEP) || (CY_CFG_PWR_SYS_IDLE_MODE == CY_CFG_PWR_MODE_DEEPSLEEP)
-void vApplicationSleep(uint32_t xExpectedIdleTime);
-#define portSUPPRESS_TICKS_AND_SLEEP(xIdleTime) vApplicationSleep(xIdleTime)
-#define configUSE_TICKLESS_IDLE 2
-#endif
+#include "cycfg_system.h"
 
 #define configTOTAL_HEAP_SIZE                       ( ( size_t ) ( CY_SRAM_SIZE - (64 * 1024)))
 #define configUSE_DAEMON_TASK_STARTUP_HOOK          0
@@ -110,30 +105,48 @@ to exclude the API function. */
 #define INCLUDE_xTaskIsTaskFinished     1
 #define INCLUDE_xTimerPendFunctionCall  1
 
-/* Cortex-M specific definitions. */
-#ifdef __NVIC_PRIO_BITS
-    /* __BVIC_PRIO_BITS will be specified when CMSIS is being used. */
-    #define configPRIO_BITS             __NVIC_PRIO_BITS
-#else
-    #define configPRIO_BITS             3        /* 15 priority levels */
-#endif
+/*
+Interrupt nesting behavior configuration.
+This is explained here: http://www.freertos.org/a00110.html
 
-/* The lowest interrupt priority that can be used in a call to a "set priority"
-function. */
-#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY         0xf
+Priorities are controlled by two macros:
+- configKERNEL_INTERRUPT_PRIORITY determines the priority of the RTOS daemon task
+- configMAX_API_CALL_INTERRUPT_PRIORITY dictates the priority of ISRs that make API calls
 
-/* The highest interrupt priority that can be used by any interrupt service
-routine that makes calls to interrupt safe FreeRTOS API functions.  DO NOT CALL
-INTERRUPT SAFE FREERTOS API FUNCTIONS FROM ANY INTERRUPT THAT HAS A HIGHER
-PRIORITY THAN THIS! (higher priorities are lower numeric values. */
-#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY    5
+Notes:
+1. Interrupts that do not call API functions should be >= configKERNEL_INTERRUPT_PRIORITY
+   and will nest.
+2. Interrupts that call API functions must have priority between KERNEL_INTERRUPT_PRIORITY
+   and MAX_API_CALL_INTERRUPT_PRIORITY (inclusive).
+3. Interrupts running above MAX_API_CALL_INTERRUPT_PRIORITY are never delayed by the OS.
+*/
+/*
+PSoC 6 __NVIC_PRIO_BITS = 3
 
-/* Interrupt priorities used by the kernel port layer itself.  These are generic
-to all Cortex-M ports, and do not rely on any particular library functions. */
-#define configKERNEL_INTERRUPT_PRIORITY         ( configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
-/* !!!! configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to zero !!!!
-See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY    ( configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
+0 (high)
+1           MAX_API_CALL_INTERRUPT_PRIORITY 001xxxxx (0x3F)
+2
+3
+4
+5
+6
+7 (low)     KERNEL_INTERRUPT_PRIORITY       111xxxxx (0xFF)
+
+!!!! configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to zero !!!!
+See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html
+*/
+
+/* Put KERNEL_INTERRUPT_PRIORITY in top __NVIC_PRIO_BITS bits of CM4 register */
+#define configKERNEL_INTERRUPT_PRIORITY         0xFF
+/*
+Put MAX_SYSCALL_INTERRUPT_PRIORITY in top __NVIC_PRIO_BITS bits of CM4 register
+NOTE For IAR compiler make sure that changes of this macro is reflected in
+file portable\IAR\CM4F\portasm.s in PendSV_Handler: routine
+*/
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY    0x3F
+/* configMAX_API_CALL_INTERRUPT_PRIORITY is a new name for configMAX_SYSCALL_INTERRUPT_PRIORITY
+ that is used by newer ports only. The two are equivalent. */
+#define configMAX_API_CALL_INTERRUPT_PRIORITY   configMAX_SYSCALL_INTERRUPT_PRIORITY
 
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
@@ -155,5 +168,15 @@ standard names. */
 
 #define configHEAP_ALLOCATION_SCHEME                (HEAP_ALLOCATION_TYPE3)
 
-#endif /* FREERTOS_CONFIG_H */
+#if (CY_CFG_PWR_SYS_IDLE_MODE == CY_CFG_PWR_MODE_SLEEP) || (CY_CFG_PWR_SYS_IDLE_MODE == CY_CFG_PWR_MODE_DEEPSLEEP)
+extern void vApplicationSleep( uint32_t xExpectedIdleTime );
+#define portSUPPRESS_TICKS_AND_SLEEP( xIdleTime ) vApplicationSleep( xIdleTime )
+#define configUSE_TICKLESS_IDLE  2
+#endif
 
+/* Deep Sleep Latency Configuration */
+#if CY_CFG_PWR_DEEPSLEEP_LATENCY > 0
+#define configEXPECTED_IDLE_TIME_BEFORE_SLEEP   CY_CFG_PWR_DEEPSLEEP_LATENCY
+#endif
+
+#endif /* FREERTOS_CONFIG_H */
