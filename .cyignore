@@ -16,5 +16,4 @@ libs/mcuboot/boot/cypress/MCUBootApp/main.c
 libs/mcuboot/boot/cypress/MCUBootApp/image_ec256_mbedtls.c
 libs/mcuboot/boot/cypress/MCUBootApp/keys.c
 libs/mcuboot/boot/cypress/MCUBootApp/os
-
-
+libs/mcuboot/boot/cypress/libs

@@ -323,6 +323,7 @@ Document Title: CE230031 - AnyCloud Example: Over-the-Air Firmware Update Using 
 | ------- | --------------------- |
 | 1.0.0   | New code example      |
 | 1.1.0   | Minor makefile updates to sync with BSP changes |
+| 1.2.0   | Updated .cyignore file to support new build system changes |
 
 ------
 
