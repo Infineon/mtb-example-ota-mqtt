@@ -1,195 +1,283 @@
 # AnyCloud Example: Over-the-Air Firmware Update Using MQTT
 
-This code example demonstrates Over-the-Air (OTA) update with PSoC® 6 MCU and CYW43xxx connectivity devices. The device establishes a connection with the designated MQTT Broker (Mosquitto is used in this example) and subscribes to a topic. When an OTA image is published to that topic, the device automatically pulls the OTA image over MQTT, saves it to the flash memory, and issues a software reset. The device uses MCUBoot as a bootloader that boots the newly downloaded image after reset.
+This code example demonstrates OTA update with PSoC® 6 MCU and CYW43xxx connectivity devices. The device establishes a connection with the designated MQTT Broker (Mosquitto is used in this example). It periodically checks the job document to see if a new update is available. When a new update is available, it will be downloaded and written to the secondary slot. On the next reboot, MCUboot will copy the new image over to the primary slot and run the application.
 
-MCUboot is a secure bootloader for 32-bit MCUs. See the [MCUBoot](https://juullabs-oss.github.io/mcuboot/) website for more details.
+MCUboot is a secure bootloader for 32-bit MCUs. See [README](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic/blob/master/README.md) of the [mtb-example-psoc6-mcuboot-basic](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic) code example for more details.
 
 The OTA feature is enabled by the *Over-the-Air update middleware library*. See the [anycloud-ota](https://github.com/cypresssemiconductorco/anycloud-ota) middleware repository on Github for more details.
 
+[Provide feedback on this Code Example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6IkFueUNsb3VkIEV4YW1wbGU6IE92ZXItdGhlLUFpciBGaXJtd2FyZSBVcGRhdGUgVXNpbmcgTVFUVCIsInJpZCI6Inlla3QiLCJEb2MgdmVyc2lvbiI6IjIuMC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJQU09DIn0=)
+
 ## Requirements
 
-- [ModusToolbox™ software](https://www.cypress.com/products/modustoolbox-software-environment) v2.1
-- [Cypress Programmer](https://www.cypress.com/products/psoc-programming-solutions)
+- [ModusToolbox® software](https://www.cypress.com/products/modustoolbox-software-environment) v2.2
+- Board Support Package (BSP) minimum required version: 2.0.0
 - Programming Language: C
-- Associated Parts: All [PSoC 6 MCU](http://www.cypress.com/PSoC6) parts with SDIO interface
+- Associated Parts: All [PSoC® 6 MCU](http://www.cypress.com/PSoC6) parts with SDIO interface
 
-## Supported Kits
+## Supported Toolchains (make variable 'TOOLCHAIN')
 
-- [PSoC 6 Wi-Fi BT Prototyping Kit](https://www.cypress.com/CY8CPROTO-062-4343W) (CY8CPROTO-062-4343W) - Default target
-- [PSoC 62S2 Wi-Fi BT Pioneer Kit](https://www.cypress.com/CY8CKIT-062S2-43012) (CY8CKIT-062S2-43012)
+- GNU Arm® Embedded Compiler v9.3.1 (`GCC_ARM`) - Default value of `TOOLCHAIN`
+- IAR C/C++ compiler v8.42.2 (`IAR`)
+
+## Supported Kits (make variable 'TARGET')
+
+This example requires PSoC 6 device with at least 2 MB flash and 1 MB SRAM and hence supports only the following kits.
+
+- [PSoC 6 Wi-Fi BT Prototyping Kit](https://www.cypress.com/CY8CPROTO-062-4343W) (`CY8CPROTO-062-4343W`) - Default value of `TARGET`
+- [PSoC 62S2 Wi-Fi BT Pioneer Kit](https://www.cypress.com/CY8CKIT-062S2-43012) (`CY8CKIT-062S2-43012`)
 
 ## Hardware Setup
 
 This example uses the board's default configuration. See the kit user guide to ensure that the board is configured correctly.
 
-**Note**: The PSoC 6 BLE Pioneer Kit (CY8CKIT-062-BLE) and the PSoC 6 WiFi-BT Pioneer Kit (CY8CKIT-062-WIFI-BT) ship with KitProg2 installed. ModusToolbox software requires KitProg3. Before using this code example, make sure that the board is upgraded to KitProg3. The tool and instructions are available in the [Firmware Loader](https://github.com/cypresssemiconductorco/Firmware-loader) GitHub repository. If you do not upgrade, you will see an error like "unable to find CMSIS-DAP device" or "KitProg firmware is out of date".
-
 ## Software Setup
 
-- Install a terminal emulator if you don't have one. Instructions in this document use [Tera Term](https://ttssh2.osdn.jp/index.html.en).
+Install a terminal emulator if you don't have one. Instructions in this document use [Tera Term](https://ttssh2.osdn.jp/index.html.en).
 
-- Install a Python Interpreter if you don't have one. This code example is tested using [Python 3.7.7](https://www.python.org/downloads/release/python-377/), but other versions may work.
+Install a Python Interpreter if you don't have one and add to path. This code example is tested using [Python 3.7.7](https://www.python.org/downloads/release/python-377/), but other versions may work.
 
 ## Code Example Structure and Overview
 
-This code example is a dual-core project, where the MCUBoot runs on CM0+ core and OTA update app runs on CM4 core. Users have to first build and program the MCUBoot project into CM0+ core, this has to be done only once. The OTA update app can then be programmed into CM4 core, users need to only modify this app for all application purposes.
+This code example is a dual-core project, where the MCUboot bootloader app runs on the CM0+ core and the OTA update app runs on the CM4 core. The OTA update app fetches the new image and places it in the flash memory; the bootloader takes care of updating the existing image with the new image. The [mtb-example-psoc6-mcuboot-basic](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic) code example is the bootloader project used for this purpose.
 
-## Building and Programming MCUBoot
-
-### Configuring MCUBoot
-
-1. Clone MCUBoot recursively from [GitHub](https://github.com/JuulLabs-OSS/mcuboot). Make sure to clone it outside the code example directory.
-   ```
-   git clone https://github.com/JuulLabs-OSS/mcuboot.git --branch v1.5.0-cypress --recursive
-   ```
-
-2. Install the required python packages mentioned in *\<mcuboot>/scripts/requirements.txt*. Navigate to *\<mcuboot>/scripts* and run the following command:
-   ```
-   pip3 install -r requirements.txt
-   ```
-3. MCUBoot and the OTA application must have the same understanding of the memory layout. Override the default memory layout by adding the following defines in the file *\<mcuboot>/boot/cypress/MCUBootApp/MCUBootApp.mk*.
+The bootloader project and this OTA update project should be built and programmed independently. They must be placed separately in the workspace as you would do for any other two independent projects. An example workspace would look something like this:
 
    ```
-   DEFINES_APP +=-DMCUBOOT_MAX_IMG_SECTORS=2000
-   DEFINES_APP +=-DCY_BOOT_BOOTLOADER_SIZE=0x12000
-   DEFINES_APP +=-DCY_BOOT_SCRATCH_SIZE=0x10000
-   DEFINES_APP +=-DCY_BOOT_PRIMARY_1_SIZE=0x0EE000
-   DEFINES_APP +=-DCY_BOOT_SECONDARY_1_SIZE=0x0EE000
+   <example-workspace>
+      |
+      |-<mtb-example-psoc6-mcuboot-basic>
+      |-<mtb-example-psoc6-ota-mqtt>
+      |
    ```
-4. Open *\<mcuboot>/boot/cypress/MCUBootApp/config/mcuboot_config/mcuboot_config.h* and comment out the following defines to skip checking the image signature:
+
+You must first build and program the MCUboot bootloader project into the CM0+ core; this needs to be done only once. The OTA update app can then be programmed into the CM4 core; you need to modify only this app for all application purposes.
+
+## Building and Programming MCUboot
+
+The [mtb-example-psoc6-mcuboot-basic](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic) code example bundles two applications: the bootloader app which runs on CM0+ and the Blinky app which runs on CM4. For this code example, only the bootloader app is required. In this document, the root directory of the bootloader app is referred to as *\<bootloader_cm0p>*.
+
+1. Import the [mtb-example-psoc6-mcuboot-basic](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic) code example per the instructions in the [Using the Code Example](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic#using-the-code-example) section of its [README](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic/blob/master/README.md).
+
+2. The bootloader app and the OTA application must have the same understanding of the memory layout. Override the default memory layout by editing the make variables in the *\<bootloader_cm0p>/shared_config.mk* file. For this example, perform the following edits to match the memory layout with the OTA application:
+
+   ```
+   MCUBOOT_SLOT_SIZE=0x100000
+   MCUBOOT_SCRATCH_SIZE=0x10000
+   MCUBOOT_MAX_IMG_SECTORS=2048
+   ```
+
+3. Copy the *\<bootloader_cm0p>/libs/mcuboot/boot/cypress/MCUBootApp/config* folder and paste it in the *\<bootloader_cm0p>* folder.
+
+4. Edit the *\<bootloader_cm0p>/config/mcuboot_config/mcuboot_config.h* file and comment out the following defines to skip checking the image signature:
 
    ```
    #define MCUBOOT_SIGN_EC256
    #define NUM_ECC_BYTES (256 / 8)
    .
    .
-   . 
+   .
    #define MCUBOOT_VALIDATE_PRIMARY_SLOT
    ```
-   
 
-**Note:** This example does not demonstrate securely upgrading the image and booting from it using the features such as image-signing, secure boot, and so on. See the [PSoC 64 Line of Secure MCUs](https://www.cypress.com/psoc64) that offer all those features built around MCUBoot.
+5. Edit *\<bootloader_cm0p>/app.mk* and replace the MCUboot include `$(MCUBOOTAPP_PATH)/config` with `./config`. This will get the build system to find the new copy of the config directory that you pasted in the *\<bootloader_cm0p>* directory, instead of the default one supplied by the library.
 
-### Building MCUBoot
+6. Edit *\<bootloader_cm0p>/Makefile* and set `USE_EXT_FLASH` to '1', because the OTA application uses the external flash to store the secondary image.
 
-1. Open a CLI terminal and navigate to *\<mcuboot>/boot/cypress/*. On Windows, you can use Cygwin to run the make command. To run Cygwin, navigate to the modus-shell directory (*{ModusToolbox install directory}/tools_\<version>/modus-shell*) and run *Cygwin.bat*.
+7. Connect the board to your PC using the provided USB cable through the KitProg3 USB connector.
 
-2. Build the application using `make`; Specify the toolchain path in the below command:  
-    ```
-    make app APP_NAME=MCUBootApp PLATFORM=PSOC_062_2M IMG_TYPE=BOOT GCC_PATH=<toolchain path> CURDIR=$(cygpath --mixed $(pwd))
-    ```
-    Example:
+8. Open a CLI terminal.
 
-    ```
-    make app APP_NAME=MCUBootApp PLATFORM=PSOC_062_2M IMG_TYPE=BOOT GCC_PATH=c:/Users/xyz/ModusToolbox/tools_2.1/gcc-7.2.1 CURDIR=$(cygpath --mixed $(pwd))
-    ```
+   On Linux and macOS, you can use any terminal application. On Windows, open the **modus-shell** app from the Start menu.
 
-### Programming MCUBoot
+9. Navigate the terminal to the *<bootloader_cm0p>/libs/mcuboot/scripts* folder.
 
-Use [Cypress Programmer](https://www.cypress.com/products/psoc-programming-solutions) to program the *MCUBootApp.elf* file generated under *\<mcuboot>/boot/cypress/MCUBootApp/out/PSOC_062_2M/Debug*.
+10. Run the following command to ensure that the required modules are installed or already present ("Requirement already satisfied:" is printed).
 
-## Programing and Running the OTA update example
+      ```
+      pip install -r requirements.txt
+      ```
+
+11. Open a serial terminal emulator and select the KitProg3 COM port. Set the serial port parameters to 8N1 and 115200 baud.
+
+12. Build and program the application per the [Step-by-Step Instructions](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic#step-by-step-instructions) in its [README](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic/blob/master/README.md).
+
+    After programming, the bootloader application starts automatically.
+
+    **Figure 1. Booting with No Bootable Image**
+
+    ![](images/booting_without_bootable_image.png)
+
+**Note:** This example does not demonstrate securely upgrading the image and booting from it using the features such as image signing and secure boot. See the [PSoC 64 Line of Secure MCUs](https://www.cypress.com/psoc64) that offer those features built around MCUboot.
+
+## Using the OTA Code Example
 
 ### In Eclipse IDE for ModusToolbox:
 
-1. Click the **New Application** link in the Quick Panel (or, use **File** > **New** > **ModusToolbox Application**).
+1. Click the **New Application** link in the **Quick Panel** (or, use **File** > **New** > **ModusToolbox Application**). This launches the [Project Creator](http://www.cypress.com/ModusToolboxProjectCreator) tool.
 
 2. Pick a kit supported by the code example from the list shown in the **Project Creator - Choose Board Support Package (BSP)** dialog.
 
-   When you select a supported kit, the example is reconfigured automatically to work with the kit. To work with a different supported kit later, use the **Library Manager** to choose the BSP for the supported kit. You can use the Library Manager to select or update the BSP and firmware libraries used in this application. To access the Library Manager, right-click the application name from the Project Workspace window in the IDE, and select **ModusToolbox** > **Library Manager**. You can also access it from the **Quick Panel**.
+   When you select a supported kit, the example is reconfigured automatically to work with the kit. To work with a different supported kit later, use the [Library Manager](https://www.cypress.com/ModusToolboxLibraryManager) to choose the BSP for the supported kit. You can use the Library Manager to select or update the BSP and firmware libraries used in this application. To access the Library Manager, click the link from the **Quick Panel**.
 
    You can also just start the application creation process again and select a different kit.
 
-   If you want to use the application for a kit not listed here, you may need to update source files. If the kit does not have the required resources, the application may not work.
+   If you want to use the application for a kit not listed here, you may need to update the source files. If the kit does not have the required resources, the application may not work.
 
-3. In the **Project Creator - Select Application** dialog, choose the example.
+3. In the **Project Creator - Select Application** dialog, choose the example by enabling the checkbox.
 
-4. Optionally, update the **Application Name:** and **Location** fields with the application name and local path where application is created.
+4. Optionally, change the suggested **New Application Name**.
 
-5. Click **Create** to complete the application creation process.
+5. Enter the local path in the **Application(s) Root Path** field to indicate where the application needs to be created.
 
-For more details, see the Eclipse IDE for ModusToolbox User Guide: *{ModusToolbox install directory}/ide_{version}/docs/mt_ide_user_guide.pdf*.
+   Applications that can share libraries can be placed in the same root path.
+
+6. Click **Create** to complete the application creation process.
+
+For more details, see the [Eclipse IDE for ModusToolbox User Guide](https://www.cypress.com/MTBEclipseIDEUserGuide) (locally available at *{ModusToolbox install directory}/ide_{version}/docs/mt_ide_user_guide.pdf*).
 
 ### In Command-line Interface (CLI):
 
+ModusToolbox provides the Project Creator as both a GUI tool and a command line tool to easily create one or more ModusToolbox applications. See the "Project Creator Tools" section of the [ModusToolbox User Guide](https://www.cypress.com/ModusToolboxUserGuide) for more details.
+
+Alternatively, you can manually create the application using the following steps:
+
 1. Download and unzip this repository onto your local machine, or clone the repository.
 
-2. Open a CLI terminal and navigate to the application folder. On Linux and macOS, you can use any terminal application. On Windows, navigate to the modus-shell directory (*{ModusToolbox install directory}/tools_\<version>/modus-shell*) and run *Cygwin.bat*.
+2. Open a CLI terminal and navigate to the application folder.
 
-3. Import required libraries by executing the `make getlibs` command.
+   On Linux and macOS, you can use any terminal application. On Windows, open the **modus-shell** app from the Start menu.
+
+   **Note:** The cloned application contains a default BSP file (*TARGET_xxx.mtb*) in the *deps* folder. Use the [Library Manager](https://www.cypress.com/ModusToolboxLibraryManager) (`make modlibs` command) to select and download a different BSP file, if required. If the selected kit does not have the required resources or is not [supported](#supported-kits-make-variable-target), the application may not work.
+
+3. Import the required libraries by executing the `make getlibs` command.
+
+Various CLI tools include a `-h` option that prints help information to the terminal screen about that tool. For more details, see the [ModusToolbox User Guide](https://www.cypress.com/ModusToolboxUserGuide) (locally available at *{ModusToolbox install directory}/docs_{version}/mtb_user_guide.pdf*).
 
 ### In Third-party IDEs:
 
-1. Follow instructions from the CLI section to download or clone the repository, and import libraries using `make getlibs` command.
+1. Follow the instructions from the [CLI](#in-command-line-interface-cli) section to create the application, and import the libraries using the `make getlibs` command.
 
 2. Export the application to a supported IDE using the `make <ide>` command.
 
-3. Follow instructions displayed in the terminal to create or import the application as an IDE project.
+    For a list of supported IDEs and more details, see the "Exporting to IDEs" section of the [ModusToolbox User Guide](https://www.cypress.com/ModusToolboxUserGuide) (locally available at *{ModusToolbox install directory}/docs_{version}/mtb_user_guide.pdf*.
 
-For more details, see the "Exporting to IDEs" section of the ModusToolbox User Guide: *{ModusToolbox install directory}/ide_{version}/docs/mtb_user_guide.pdf*.
+3. Follow the instructions displayed in the terminal to create or import the application as an IDE project.
+
+## Setting up the MQTT Publisher Script
+
+This code example uses the public MQTT Broker [test.mosquitto.org](https://test.mosquitto.org/). This Broker may not be available at all times. In that case, you can install and run the Mosquitto Broker on your computer. Download the [Mosquitto Broker](https://mosquitto.org/download/) or you can use one of the other public MQTT Brokers listed at [https://github.com/mqtt/mqtt.github.io/wiki/public_brokers](https://github.com/mqtt/mqtt.github.io/wiki/public_brokers).
+
+The root directory of the OTA application is referred to as *\<OTA Application>* in this document.
+
+1. Open a CLI terminal.
+
+   On Linux and macOS, you can use any terminal application. On Windows, open the **modus-shell** app from the Start menu.
+
+2. Navigate to the *\<OTA Application>/scripts/* folder.
+
+3. Run the *publisher.py* Python script.
+
+   The scripts takes arguments such as kit name, broker URL, and file path. For details on the supported arguments and their usage, see the [Running Publisher Python Script](https://github.com/cypresssemiconductorco/anycloud-ota#running-publisher-python-script) section.
+
+   ```
+   python publisher.py [tls] [-l] [-f <filepath>] [-b <broker>] [-k <kit>]
+   ```
+
+   For the default configuration of this example, do the following:
+
+      - **Using the Code Example in Non-TLS Mode:**
+
+         1. Run the following command:
+
+            ```
+            python publisher.py -k CY8CPROTO_062_4343W
+            ```
+
+      - **Using the Code Example in TLS Mode:**
+
+         1. Generate the client certificate and the private key per the instructions from [https://test.mosquitto.org/](https://test.mosquitto.org/). The root CA certificate is available at [https://test.mosquitto.org/ssl/mosquitto.org.crt](moshttps://test.mosquitto.org/ssl/mosquitto.org.crtquitto.org.crt).
+
+         2. Rename the certificates and key as follows, and place them in the *\<OTA Application>/scripts/* folder:
+
+            Root CA Certificate - *mosquitto.org.crt*  
+            Client Certificate - *mosquitto_client.crt*  
+            Client Key - *mosquitto_client.key*
+
+         3. Run the following command:
+            ```
+            python publisher.py tls -k CY8CPROTO_062_4343W
+            ```
 
 ## Operation
 
-**Note:** This example uses the public MQTT broker [test.mosquitto.org](https://test.mosquitto.org/). This broker may not be available at all times. In that case, you can install and run the Mosquitto broker on your computer. The Mosquitto broker is available for download at [https://mosquitto.org/download/](https://mosquitto.org/download/) or you can use one of the other public MQTT brokers listed at [https://github.com/mqtt/mqtt.github.io/wiki/public_brokers](https://github.com/mqtt/mqtt.github.io/wiki/public_brokers).
-
-The [test.mosquitto.org](https://test.mosquitto.org/) broker uses the SHA-1 hashing algorithm for certificate signing. This code example enables SHA-1 support in Mbed TLS and MQTT Client libraries by following the instructions in [Quick Start](https://github.com/cypresssemiconductorco/mqtt/blob/master/README.md#quick-start), to connect to the broker in TLS mode. As cautioned by Mbed TLS, SHA-1 is considered a weak message digest. The use of SHA-1 for certificate signing constitutes a security risk. It is recommended to avoid dependencies on it, and consider stronger message digests instead. **You should remove the configurations enabling SHA-1 if you are reusing this code example in your application**.
-
 1. Connect the board to your PC using the provided USB cable through the KitProg3 USB connector.
 
-2. Modify the connection configuration like `WIFI_SSID`, `WIFI_PASSWORD`, and `WIFI_SECURITY` macros to match the settings of your Wi-Fi network. These macros are defined in the *\<Application Name>/source/ota_app_config.h* file.   
-   
-   By default, this code example works in non-TLS mode. Follow the steps below to enable TLS mode.
+2. Open a terminal program and select the KitProg3 COM port. Set the serial port parameters to 8N1 and 115200 baud.
 
-   - **Using the Code Example in TLS Mode**:
+3. Edit the *\<OTA Application>/source/ota_app_config.h* file to configure your OTA application:
 
-      1. Modify the value of `ENABLE_TLS` to `(true)` in the *\<Application Name>/source/ota_app_config.h* file. 
-   
-      2. Modify the value of `MQTT_SERVER_PORT` to `(8884)` in the *\<Application Name>/source/ota_app_config.h* file.
-   
-      3. Generate the client certificate and the private key according to the instructions from [https://test.mosquitto.org/](https://test.mosquitto.org/). Root CA certificate is available at [https://test.mosquitto.org/ssl/mosquitto.org.crt](moshttps://test.mosquitto.org/ssl/mosquitto.org.crtquitto.org.crt).
-   
-4. Add the Root CA certificate, client certificate, and private key to the *\<Application Name>/source/ota_app_config.h* file as per the sample shown.
-   
-3. Open the python script *\<Application Name>/scripts/mqtt_ota_publisher.py* and change the value of `KIT` to the target board being used.
+   1. Modify the connection configuration such as `WIFI_SSID`, `WIFI_PASSWORD`, and `WIFI_SECURITY` to match the settings of your Wi-Fi network.
 
-4. Open a terminal program and select the KitProg3 COM port. Set the serial port parameters to 8N1 and 115200 baud.
+   2. By default, this code example works in non-TLS mode. Do the following to enable TLS mode:
 
-5. Program the board. 
+      - **Using the Code Example in TLS Mode**:
 
-   - **Using Eclipse IDE for ModusToolbox**:
+         1. Modify the value of `ENABLE_TLS` to `(true)`.
 
-      1. Select the application project in the Project Explorer.
+         2. Modify the value of `MQTT_SERVER_PORT` to `(8884)`.
 
-      2. In the **Quick Panel**, scroll down, and click **\<Application Name> Program (KitProg3)**.
+         3. Generate the client certificate and the private key per the instructions from [https://test.mosquitto.org/](https://test.mosquitto.org/). The root CA certificate is available at [https://test.mosquitto.org/ssl/mosquitto.org.crt](https://test.mosquitto.org/ssl/mosquitto.org.crtquitto.org.crt).
 
-   - **Using CLI**:
+            **Tip:** You can use the same certificates and keys that were generated in the [Setting up MQTT publisher script](#setting-up-mqtt-publisher-script) section.
 
-      1. From the terminal, execute the `make program` command to build and program the application using the default toolchain to the default target. You can specify a target and toolchain manually:
-         ```
-         make program TARGET=<BSP> TOOLCHAIN=<toolchain>
-         ```
-         Example:
+         4. Modify the value of `ROOT_CA_CERTIFICATE`, `CLIENT_CERTIFICATE` and `CLIENT_KEY` similar to the sample shown in the macro description. Use the certificates and key generated from the previous step.
 
-         ```
-         make program TARGET=CY8CPROTO-062-4343W TOOLCHAIN=GCC_ARM
-         ```
-         **Note**:  Before building the application, ensure that the *deps* folder contains the BSP file (*TARGET_xxx.lib*) corresponding to the TARGET. Execute the `make getlibs` command to fetch the BSP contents before building the application.
-   
-   At this point, the primary slot is programmed and Arm® Cortex®-M4 starts running the image from the primary slot on reset. Observe the messages on the UART terminal, wait for the device to make the required connections as shown in the Figure 1. Also, the user LED will blink at 1 Hz.
+4. Edit the Job document (*\<OTA Application>/scripts/ota_update.json*):
 
-   **Figure 1. Connection to MQTT Broker**
+   1. In Step 3, if the code example has been configured to work in TLS mode, set the value of `Port` to `8884`.
 
-   ![Figure 1](images/connection_mqtt_broker.png)
+   2. Modify the value of `Board` to match the kit you are using.
 
-6. Modify the value of the `BLINKY_DELAY_MS` macro to `(100)` in the *\<Application Name>/source/led_task.c* and change the app version in the *\<Application Name>/Makefile* by setting `APP_VERSION_MINOR` to 1. Build the app, this new image will be published to the MQTT broker to demonstrate OTA update.
+5. Program the board.
 
-   - **Using Eclipse IDE for ModusToolbox**:
+   - **Using Eclipse IDE for ModusToolbox:**
 
       1. Select the application project in the Project Explorer.
 
-      2. In the **Quick Panel**, scroll down, and click **Build \<Application Name> Application**.
+      2. In the **Quick Panel**, scroll down, and click **\<OTA Application> Program (KitProg3_MiniProg4)**.
 
-   - **Using CLI**:
+   - **Using CLI:**
+
+     From the terminal, execute the `make program` command to build and program the application using the default toolchain to the default target. You can specify a target and toolchain manually:
+      ```
+      make program TARGET=<BSP> TOOLCHAIN=<toolchain>
+      ```
+
+      Example:
+      ```
+      make program TARGET=CY8CPROTO-062-4343W TOOLCHAIN=GCC_ARM
+      ```
+
+   At this point, the primary slot is programmed. The CM4 CPU starts running the image from the primary slot on reset. Observe the messages on the UART terminal and wait for the device to make the required connections as shown in Figure 1. Observe that the user LED blinks at 1 Hz.
+
+   **Figure 2. Connection to the MQTT Broker**
+
+   ![](images/connection_mqtt_broker.png)
+
+6. The Job document placed in the *\<OTA Application>/scripts/* folder has a value of `Version` as `1.0.0`. Because the OTA application version and the available update version are the same, the update will not happen.
+
+7. Modify the value of the `BLINKY_DELAY_MS` macro to `(100)` in the *\<OTA Application>/source/led_task.c* file and change the app version in the *\<OTA Application>/Makefile* by setting `APP_VERSION_MINOR` to '1'.
+
+8. Build the app (**DO NOT** program it to the kit). This new image will be published to the MQTT Broker in the following steps to demonstrate the OTA update.
+
+   - **Using Eclipse IDE for ModusToolbox:**
+
+      1. Select the application project in the Project Explorer.
+
+      2. In the **Quick Panel**, scroll down, and click **Build \<OTA Application> Application**.
+
+   - **Using CLI:**
 
       1. From the terminal, execute the `make build` command to build the application using the default toolchain to the default target. You can specify a target and toolchain manually:
          ```
@@ -201,75 +289,52 @@ The [test.mosquitto.org](https://test.mosquitto.org/) broker uses the SHA-1 hash
          make build TARGET=CY8CPROTO-062-4343W TOOLCHAIN=GCC_ARM
          ```
 
-7. Run the python script *\<Application Name>/scripts/mqtt_ota_publisher.py*. This will publish the upgraded image. Install the *paho-mqtt* python package required for running the script:
-   ```
-   pip3 install paho-mqtt
-   ```
+9. After a successful build, edit the *\<OTA Application>/scripts/ota_update.json* file to modify the value of `Version` to `1.1.0`.
 
-   **Note:** By default, the script works in non-TLS mode.
+10. The OTA application now finds the updated Job document, downloads the new image, and places it in the secondary slot. Once the download is complete, a soft reset is issued. The MCUboot bootloader starts the image upgrade process.
 
-   - **Using the Script in TLS Mode**:
+    **Figure 3. Image Download and Upgrade**
 
-      1. Modify the value of `TLS_ENABLED` to `True` and `BROKER_PORT` to `8884` in the *\<Application Name>/scripts/mqtt_ota_publisher.py* file. 
+    ![](images/downloading_new_image.png)
 
-      2. Generate the client certificate and the private key according to the instruction from [https://test.mosquitto.org/](https://test.mosquitto.org/) or you can use the same client certificate and key used with the OTA firmware application.
-
-      3. Add the Root CA certificate, client certificate, and private key to the *\<Application Name>/scripts* folder and run the script. Name the files as listed below or you will modify the filenames in the script:
-         - Root CA certificate: mosquitto.org.crt
-         - Client certfile: client.crt
-         - Private key: client.key
-
-8. Observe the UART terminal to see the OTA image being received in chunks.
-
-   **Figure 2. Receiving New Image**
-
-   ![Figure 2](images/download_ota_image.png)
-
-9. Once all chunks are received and are written to the secondary slot in the flash, the device will reboot. MCUBoot will verify the new image, copy it to the primary, and boot the new application.
-
-   **Figure 3. Booting New Image**
-
-   ![Figure 3](images/perform_ota_update.png)
-
-10. Observe that the user LED now blinking a 10 Hz.
+11. After the image upgrade is successfully completed, observe that the user LED is now blinking a 10 Hz.
 
 ## Debugging
 
-You can debug the example to step through the code. In the IDE, use the **\<Application Name> Debug (KitProg3)** configuration in the **Quick Panel**. For more details, see "Program and Debug" section in the Eclipse IDE for ModusToolbox User Guide: *{ModusToolbox install directory}/ide_{version}/docs/mt_ide_user_guide.pdf*.
+You can debug the example to step through the code. In the IDE, use the **\<OTA Application> Debug (KitProg3_MiniProg4)** configuration in the **Quick Panel**. For more details, see the "Program and Debug" section in the [Eclipse IDE for ModusToolbox User Guide](https://www.cypress.com/MTBEclipseIDEUserGuide).
+
+**Note:** **(Only while debugging)** On the CM4 CPU, some code in `main()` may execute before the debugger halts at the beginning of `main()`. This means that some code executes twice - once before the debugger stops execution, and again after the debugger resets the program counter to the beginning of `main()`. See [KBA231071](https://community.cypress.com/docs/DOC-21143) to learn about this and for the workaround.
 
 ## Design and Implementation
 
-The flow of the OTA update feature can be represented as shown in Figure 4. The flow consists of three parts: publisher script, MQTT broker, and subscriber device. The subscriber device that requires the OTA update runs the OTA agent and subscribes to an MQTT topic with the broker. The device will later receive the new image from the broker on this topic. The publisher implemented through a python script publishes an upgrade image to the MQTT broker on the same topic.
+This example implements two RTOS tasks: OTA client and LED blink. Both these tasks are independent and do not communicate with each other. The OTA client task initializes the dependent middleware and starts the OTA agent. The LED task blinks the user LED at a specified delay.
 
-**Figure 4. Code Example Overview**
+All the source files related to the two tasks are placed under the *\<OTA Application>/source/* directory:
 
-![Figure 4](images/overview.png)
+| File | Description |
+|:-----|:------|
+|*ota_task.c*| Contains the task and functions related to the OTA client.|
+|*ota_task.h* | Contains the public interfaces for the OTA client task.|
+|*led_task.c* | Contains the task and functions related to LED blinking.|
+|*led_task.h* | Contains the public interfaces for the LED blink task.|
+|*main.c* | Initializes the BSP and the retarget-io library, and creates the OTA client and LED blink tasks.|
+|*ota_app_config.h* | Contains the OTA and Wi-Fi configuration macros such has SSID, password, MQTT Broker details, certificates, and key.|
 
-On the device side, the flow involves building of two applications - MCUBoot-based bootloader and the application that performs OTA.
+The *\<OTA Application>/configs/* folder contains other configurations related to the OTA middleware, FreeRTOS, and MBEDTLS.
 
-MCUboot is a secure bootloader for 32-bit MCUs. The goal of MCUboot is to define a common infrastructure for the bootloader, system flash layout on microcontroller systems, and to provide a secure bootloader that enables simple software upgrades. In this example, the MCUBootApp runs on Cortex-M0+ core to verify, copy, and run the application on CM4 core.
+The *\<OTA Application>/scripts/* folder contains a Publisher Python script. You can modify this script to meet your requirements.
 
-The application which needs the OTA updates should run the OTA agent. The OTA agent spawns threads to receive OTA updates when available, without intervening with the application's core functionality. The initial application resides in the primary slot of the flash memory. When the OTA agent receives an update, the new image is placed in the secondary slot of the flash memory. On the next reboot, the MCUBoot will copy the image from the secondary slot into the primary slot and then CM4 will boot the upgraded image from the primary slot.
+Figure 4 shows the flow of the OTA update process using MQTT. The application which needs OTA updates should run the OTA Agent. The OTA Agent spawns threads to receive OTA updates when available, without intervening with the application's core functionality.
 
-### Memory Layout in PSoC 6 with 2 MB Flash
+The initial application resides in the primary slot of the flash memory. When the OTA Agent receives an update, the new image is placed in the secondary slot of the flash memory. On the next reboot, MCUboot will copy the image from the secondary slot into the primary slot and then CM4 will boot the upgraded image from the primary slot.
 
-The device has an internal flash of size 2 MB. The memory is partitioned into four regions.
+**Figure 4. Overview of OTA Update Using MQTT**
 
-**Figure 5. Flash Memory Layout**
+![](images/ota_mqtt_update_flow.png)
 
-![Figure 5](images/flash_layout.jpg)
+For more details on the features and configurations offered by the [anycloud-ota](https://github.com/cypresssemiconductorco/anycloud-ota) library, see its [README](https://github.com/cypresssemiconductorco/anycloud-ota/blob/master/README.md).
 
-1. Bootloader region of size 72 KB.
-
-2. Primary memory slot of size 952 KB. This region holds the factory image, which is currently being executed.
-
-3. Secondary memory slot of size 952 KB. The OTA agent downloads the update image and stores it in this region.
-
-4. Scratch memory of size 64 KB. MCUBoot supports images that are built to run from flash from a fixed location. If the updated image downloaded to the secondary slot is to be executed, then either the primary slot is overwritten by the secondary slot or the contents of two slots are swapped. This region is used for swapping between the primary and secondary slots. 
-
-The Cypress port for MCUBoot currently doesn't support swapping. Everytime the device reboots, the secondary slot is erased to prepare for receving the update. The image downloaded onto the secondary slot by the OTA agent is stored temporarily. Upon reboot, MCUBoot validates and copies the secondary slot to the primary slot. This process repeats itself whenever a new update is received.
-
-It is important for both MCUBoot and the application to have the exact same understanding of the memory layout. Otherwise, the bootloader may consider an authentic image as invalid. To learn more about the bootloader refer to the [MCUBoot](https://github.com/JuulLabs-OSS/mcuboot/blob/cypress/docs/design.md) documentation.
+Both MCUboot and the application must have the exact same understanding of the memory layout. Otherwise, the bootloader may consider an authentic image as invalid. For more details on the features and configurations of MCUboot-based bootloader, see the [README](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic/blob/master/README.md) of the [mtb-example-psoc6-mcuboot-basic](https://github.com/cypresssemiconductorco/mtb-example-psoc6-mcuboot-basic) code example.
 
 ### Resources and Settings
 
@@ -277,6 +342,7 @@ It is important for both MCUBoot and the application to have the exact same unde
 
 | Resource  |  Alias/Object     |    Purpose     |
 | :-------  | :------------     | :------------  |
+| UART (HAL)|cy_retarget_io_uart_obj| UART HAL object used by Retarget-IO for Debug UART port  |
 | GPIO (HAL)| CYBSP_USER_LED    | User LED       |
 
 ## Related Resources
@@ -296,18 +362,19 @@ It is important for both MCUBoot and the application to have the exact same unde
 | [CY8CPROTO-063-BLE](https://www.cypress.com/CY8CPROTO-063-BLE) PSoC 6 BLE Prototyping Kit | [CY8CPROTO-062-4343W](https://www.cypress.com/CY8CPROTO-062-4343W) PSoC 6 Wi-Fi BT Prototyping Kit |
 | [CY8CKIT-062S2-43012](https://www.cypress.com/CY8CKIT-062S2-43012) PSoC 62S2 Wi-Fi BT Pioneer Kit | [CY8CPROTO-062S3-4343W](https://www.cypress.com/CY8CPROTO-062S3-4343W) PSoC 62S3 Wi-Fi BT Prototyping Kit |
 | [CYW9P62S1-43438EVB-01](https://www.cypress.com/CYW9P62S1-43438EVB-01) PSoC 62S1 Wi-Fi BT Pioneer Kit | [CYW9P62S1-43012EVB-01](https://www.cypress.com/CYW9P62S1-43012EVB-01) PSoC 62S1 Wi-Fi BT Pioneer Kit |                                                              |
-| **Libraries**                                                |                                                              |
-| PSoC 6 Peripheral Driver Library (PDL) and docs                    | [psoc6pdl](https://github.com/cypresssemiconductorco/psoc6pdl) on GitHub |
-| Cypress Hardware Abstraction Layer (HAL) Library and docs          | [psoc6hal](https://github.com/cypresssemiconductorco/psoc6hal) on GitHub |
-| RetargetIO - A utility library to retarget the standard input/output (STDIO) messages to a UART port | [retarget-io](https://github.com/cypresssemiconductorco/retarget-io) on GitHub |
-| **Middleware**                                               |                                                              |
+|[CY8CKIT-064B0S2-4343W](http://www.cypress.com/CY8CKIT-064B0S2-4343W) PSoC 64 Secure Boot Wi-Fi BT Pioneer Kit|  |                                                              |
+| **Libraries**                                                 |                                                              |
+| PSoC 6 Peripheral Driver Library (PDL) and docs  | [mtb-pdl-cat1](https://github.com/cypresssemiconductorco/mtb-pdl-cat1) on GitHub |
+| Cypress Hardware Abstraction Layer (HAL) Library and docs     | [mtb-hal-cat1](https://github.com/cypresssemiconductorco/mtb-hal-cat1) on GitHub |
+| Retarget IO - A utility library to retarget the standard input/output (STDIO) messages to a UART port | [retarget-io](https://github.com/cypresssemiconductorco/retarget-io) on GitHub |
+| **Middleware**                                               |                                                              ||                                                              |
 | AnyCloud OTA library and docs                                | [anycloud-ota](https://github.com/cypresssemiconductorco/anycloud-ota) on GitHub |
 | Wi-Fi Middleware Core library and docs                       | [wifi-mw-core](https://github.com/cypresssemiconductorco/wifi-mw-core) on GitHub |
-| CapSense library and docs                                    | [capsense](https://github.com/cypresssemiconductorco/capsense) on GitHub |
+| CapSense® library and docs                                    | [capsense](https://github.com/cypresssemiconductorco/capsense) on GitHub |
 | Links to all PSoC 6 MCU Middleware                           | [psoc6-middleware](https://github.com/cypresssemiconductorco/psoc6-middleware) on GitHub |
 | **Tools**                                                    |                                                              |
-| [Eclipse IDE for ModusToolbox](https://www.cypress.com/modustoolbox)     | The multi-platform, Eclipse-based Integrated Development Environment (IDE) that supports application configuration and development for PSoC 6 MCU and IoT designers.             |
-| [PSoC Creator](https://www.cypress.com/products/psoc-creator-integrated-design-environment-ide) | The Cypress IDE for PSoC and FM0+ MCU development.            |
+| [Eclipse IDE for ModusToolbox](https://www.cypress.com/modustoolbox)     | The cross-platform, Eclipse-based IDE for IoT designers that supports application configuration and development targeting converged MCU and wireless systems.             |
+| [PSoC Creator™](https://www.cypress.com/products/psoc-creator-integrated-design-environment-ide) | The Cypress IDE for PSoC and FM0+ MCU development.            |
 
 ## Other Resources
 
@@ -317,22 +384,22 @@ For PSoC 6 MCU devices, see [How to Design with PSoC 6 MCU - KBA223067](https://
 
 ## Document History
 
-Document Title: CE230031 - AnyCloud Example: Over-the-Air Firmware Update Using MQTT
+Document Title: *CE230031* - *AnyCloud Example: Over-the-Air Firmware Update Using MQTT*
 
 | Version | Description of Change |
 | ------- | --------------------- |
-| 1.0.0   | New code example      |
-| 1.1.0   | Minor makefile updates to sync with BSP changes |
-| 1.2.0   | Updated .cyignore file to support new build system changes |
-
+| 1.0.0   | New code example.      |
+| 1.1.0   | Minor Makefile updates to sync with BSP changes. |
+| 1.2.0   | Updated the *.cyignore* file to support new build system changes. |
+| 2.0.0   | Updated to support AnyCloud OTA v2.x and ModusToolbox v2.2. <br> This version is not backward compatible with ModusToolbox software v2.1. |
 ------
 
 All other trademarks or registered trademarks referenced herein are the property of their respective owners.
 
-![Banner](images/footer_banner.png)
+![banner](images/ifx-cy-banner.png)
 
 -------------------------------------------------------------------------------
 
-© Cypress Semiconductor Corporation, 2020. This document is the property of Cypress Semiconductor Corporation and its subsidiaries ("Cypress"). This document, including any software or firmware included or referenced in this document ("Software"), is owned by Cypress under the intellectual property laws and treaties of the United States and other countries worldwide. Cypress reserves all rights under such laws and treaties and does not, except as specifically stated in this paragraph, grant any license under its patents, copyrights, trademarks, or other intellectual property rights. If the Software is not accompanied by a license agreement and you do not otherwise have a written agreement with Cypress governing the use of the Software, then Cypress hereby grants you a personal, non-exclusive, nontransferable license (without the right to sublicense) (1) under its copyright rights in the Software (a) for Software provided in source code form, to modify and reproduce the Software solely for use with Cypress hardware products, only internally within your organization, and (b) to distribute the Software in binary code form externally to end users (either directly or indirectly through resellers and distributors), solely for use on Cypress hardware product units, and (2) under those claims of Cypress's patents that are infringed by the Software (as provided by Cypress, unmodified) to make, use, distribute, and import the Software solely for use with Cypress hardware products. Any other use, reproduction, modification, translation, or compilation of the Software is prohibited.  
-TO THE EXTENT PERMITTED BY APPLICABLE LAW, CYPRESS MAKES NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, WITH REGARD TO THIS DOCUMENT OR ANY SOFTWARE OR ACCOMPANYING HARDWARE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. No computing device can be absolutely secure. Therefore, despite security measures implemented in Cypress hardware or software products, Cypress shall have no liability arising out of any security breach, such as unauthorized access to or use of a Cypress product. CYPRESS DOES NOT REPRESENT, WARRANT, OR GUARANTEE THAT CYPRESS PRODUCTS, OR SYSTEMS CREATED USING CYPRESS PRODUCTS, WILL BE FREE FROM CORRUPTION, ATTACK, VIRUSES, INTERFERENCE, HACKING, DATA LOSS OR THEFT, OR OTHER SECURITY INTRUSION (collectively, "Security Breach"). Cypress disclaims any liability relating to any Security Breach, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any Security Breach. In addition, the products described in these materials may contain design defects or errors known as errata which may cause the product to deviate from published specifications. To the extent permitted by applicable law, Cypress reserves the right to make changes to this document without further notice. Cypress does not assume any liability arising out of the application or use of any product or circuit described in this document. Any information provided in this document, including any sample design information or programming code, is provided only for reference purposes. It is the responsibility of the user of this document to properly design, program, and test the functionality and safety of any application made of this information and any resulting product. "High-Risk Device" means any device or system whose failure could cause personal injury, death, or property damage. Examples of High-Risk Devices are weapons, nuclear installations, surgical implants, and other medical devices. "Critical Component" means any component of a High-Risk Device whose failure to perform can be reasonably expected to cause, directly or indirectly, the failure of the High-Risk Device, or to affect its safety or effectiveness. Cypress is not liable, in whole or in part, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any use of a Cypress product as a Critical Component in a High-Risk Device. You shall indemnify and hold Cypress, its directors, officers, employees, agents, affiliates, distributors, and assigns harmless from and against all claims, costs, damages, and expenses, arising out of any claim, including claims for product liability, personal injury or death, or property damage arising from any use of a Cypress product as a Critical Component in a High-Risk Device. Cypress products are not intended or authorized for use as a Critical Component in any High-Risk Device except to the limited extent that (i) Cypress's published data sheet for the product explicitly states Cypress has qualified the product for use in a specific High-Risk Device, or (ii) Cypress has given you advance written authorization to use the product as a Critical Component in the specific High-Risk Device and you have signed a separate indemnification agreement.  
+© Cypress Semiconductor Corporation, 2020. This document is the property of Cypress Semiconductor Corporation and its subsidiaries ("Cypress"). This document, including any software or firmware included or referenced in this document ("Software"), is owned by Cypress under the intellectual property laws and treaties of the United States and other countries worldwide. Cypress reserves all rights under such laws and treaties and does not, except as specifically stated in this paragraph, grant any license under its patents, copyrights, trademarks, or other intellectual property rights. If the Software is not accompanied by a license agreement and you do not otherwise have a written agreement with Cypress governing the use of the Software, then Cypress hereby grants you a personal, non-exclusive, nontransferable license (without the right to sublicense) (1) under its copyright rights in the Software (a) for Software provided in source code form, to modify and reproduce the Software solely for use with Cypress hardware products, only internally within your organization, and (b) to distribute the Software in binary code form externally to end users (either directly or indirectly through resellers and distributors), solely for use on Cypress hardware product units, and (2) under those claims of Cypress's patents that are infringed by the Software (as provided by Cypress, unmodified) to make, use, distribute, and import the Software solely for use with Cypress hardware products. Any other use, reproduction, modification, translation, or compilation of the Software is prohibited.
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, CYPRESS MAKES NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, WITH REGARD TO THIS DOCUMENT OR ANY SOFTWARE OR ACCOMPANYING HARDWARE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. No computing device can be absolutely secure. Therefore, despite security measures implemented in Cypress hardware or software products, Cypress shall have no liability arising out of any security breach, such as unauthorized access to or use of a Cypress product. CYPRESS DOES NOT REPRESENT, WARRANT, OR GUARANTEE THAT CYPRESS PRODUCTS, OR SYSTEMS CREATED USING CYPRESS PRODUCTS, WILL BE FREE FROM CORRUPTION, ATTACK, VIRUSES, INTERFERENCE, HACKING, DATA LOSS OR THEFT, OR OTHER SECURITY INTRUSION (collectively, "Security Breach"). Cypress disclaims any liability relating to any Security Breach, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any Security Breach. In addition, the products described in these materials may contain design defects or errors known as errata which may cause the product to deviate from published specifications. To the extent permitted by applicable law, Cypress reserves the right to make changes to this document without further notice. Cypress does not assume any liability arising out of the application or use of any product or circuit described in this document. Any information provided in this document, including any sample design information or programming code, is provided only for reference purposes. It is the responsibility of the user of this document to properly design, program, and test the functionality and safety of any application made of this information and any resulting product. "High-Risk Device" means any device or system whose failure could cause personal injury, death, or property damage. Examples of High-Risk Devices are weapons, nuclear installations, surgical implants, and other medical devices. "Critical Component" means any component of a High-Risk Device whose failure to perform can be reasonably expected to cause, directly or indirectly, the failure of the High-Risk Device, or to affect its safety or effectiveness. Cypress is not liable, in whole or in part, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any use of a Cypress product as a Critical Component in a High-Risk Device. You shall indemnify and hold Cypress, its directors, officers, employees, agents, affiliates, distributors, and assigns harmless from and against all claims, costs, damages, and expenses, arising out of any claim, including claims for product liability, personal injury or death, or property damage arising from any use of a Cypress product as a Critical Component in a High-Risk Device. Cypress products are not intended or authorized for use as a Critical Component in any High-Risk Device except to the limited extent that (i) Cypress's published data sheet for the product explicitly states Cypress has qualified the product for use in a specific High-Risk Device, or (ii) Cypress has given you advance written authorization to use the product as a Critical Component in the specific High-Risk Device and you have signed a separate indemnification agreement.
 Cypress, the Cypress logo, Spansion, the Spansion logo, and combinations thereof, WICED, PSoC, CapSense, EZ-USB, F-RAM, and Traveo are trademarks or registered trademarks of Cypress in the United States and other countries. For a more complete list of Cypress trademarks, visit cypress.com. Other names and brands may be claimed as property of their respective owners.

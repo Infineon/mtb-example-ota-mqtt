@@ -38,6 +38,8 @@
 #ifndef SOURCE_OTA_APP_CONFIG_H_
 #define SOURCE_OTA_APP_CONFIG_H_
 
+#include "cy_ota_config.h"
+
 /***********************************************
  * Connection configuration
  **********************************************/
@@ -76,7 +78,7 @@
 /* MQTT topics */
 const char * my_topics[ MQTT_TOPIC_FILTER_NUM ] =
 {
-        "anycloud/test/ota/image"
+        COMPANY_TOPIC_PREPEND "/" CY_TARGET_BOARD_STRING "/" PUBLISHER_DIRECT_TOPIC
 };
 
 /*

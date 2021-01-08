@@ -75,7 +75,13 @@
  * Uncomment a macro to enable alternate implementation of specific base
  * platform function
  */
+//#define MBEDTLS_PLATFORM_EXIT_ALT
 #define MBEDTLS_PLATFORM_TIME_ALT
+//#define MBEDTLS_PLATFORM_FPRINTF_ALT
+//#define MBEDTLS_PLATFORM_PRINTF_ALT
+//#define MBEDTLS_PLATFORM_SNPRINTF_ALT
+//#define MBEDTLS_PLATFORM_NV_SEED_ALT
+//#define MBEDTLS_PLATFORM_SETUP_TEARDOWN_ALT
 
 /**
  * \def MBEDTLS_ENTROPY_HARDWARE_ALT
@@ -99,6 +105,7 @@
  */
 #undef MBEDTLS_ECP_DP_SECP192R1_ENABLED
 #undef MBEDTLS_ECP_DP_SECP224R1_ENABLED
+//#define MBEDTLS_ECP_DP_SECP256R1_ENABLED
 #undef MBEDTLS_ECP_DP_SECP384R1_ENABLED
 #undef MBEDTLS_ECP_DP_SECP521R1_ENABLED
 #undef MBEDTLS_ECP_DP_SECP192K1_ENABLED
@@ -178,6 +185,8 @@
  */
 #define MBEDTLS_ENTROPY_FORCE_SHA256
 
+#define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_CERTIFICATES
+
 /**
  * \def MBEDTLS_SELF_TEST
  *
@@ -235,6 +244,16 @@
  *
  */
 #undef MBEDTLS_SSL_RENEGOTIATION
+
+/**
+ * \def MBEDTLS_SSL_SRV_SUPPORT_SSLV2_CLIENT_HELLO
+ *
+ * Enable support for receiving and parsing SSLv2 Client Hello messages for the
+ * SSL Server module (MBEDTLS_SSL_SRV_C).
+ *
+ * Uncomment this macro to enable support for SSLv2 Client Hello messages.
+ */
+//#define MBEDTLS_SSL_SRV_SUPPORT_SSLV2_CLIENT_HELLO
 
 /**
  * \def MBEDTLS_SSL_PROTO_TLS1
@@ -472,19 +491,5 @@
  * This module is used for reading X.509 certificate request.
  */
 #undef MBEDTLS_X509_CSR_PARSE_C
-
-/**
- * Allow SHA-1 in the default TLS configuration for certificate signing.
- * Without this build-time option, SHA-1 support must be activated explicitly
- * through mbedtls_ssl_conf_cert_profile. Turning on this option is not
- * recommended because of it is possible to generate SHA-1 collisions, however
- * this may be safe for legacy infrastructure where additional controls apply.
- *
- * \warning   SHA-1 is considered a weak message digest and its use constitutes
- *            a security risk. If possible, we recommend avoiding dependencies
- *            on it, and considering stronger message digests instead.
- *
- */
-#define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_CERTIFICATES
 
 #endif /* MBEDTLS_USER_CONFIG_HEADER */

@@ -29,9 +29,11 @@
 ################################################################################
 
 # Target board/hardware (BSP).
-# To change the target, use the Library manager ('make modlibs' from command line).
-# If TARGET is manually edited, ensure TARGET_<BSP>.lib with a valid URL exists
-# in the application, and run 'make getlibs' to fetch BSP contents.
+# To change the target, it is recommended to use the Library manager 
+# ('make modlibs' from command line), which will also update Eclipse IDE launch 
+# configurations. If TARGET is manually edited, ensure TARGET_<BSP>.mtb with a 
+# valid URL exists in the application, run 'make getlibs' to fetch BSP contents
+# and update or regenerate launch configurations for your IDE.
 TARGET=CY8CPROTO-062-4343W
 
 # Underscore needed for $(TARGET) directory
@@ -41,11 +43,14 @@ TARGET_UNDERSCORE=$(subst -,_,$(TARGET))
 CORE?=CM4
 
 # Name of application (used to derive name of final linked file).
+# 
+# If APPNAME is edited, ensure to update or regenerate launch 
+# configurations for your IDE.
 APPNAME=mtb-example-anycloud-ota-mqtt
 
 # Name of toolchain to use. Options include:
 #
-# GCC_ARM -- GCC 7.2.1, provided with ModusToolbox IDE
+# GCC_ARM -- GCC provided with ModusToolbox IDE
 # ARM     -- ARM Compiler (must be installed separately)
 # IAR     -- IAR Compiler (must be installed separately)
 #
@@ -57,7 +62,10 @@ TOOLCHAIN=GCC_ARM
 # Debug -- build with minimal optimizations, focus on debugging.
 # Release -- build with full optimizations
 # Custom -- build with custom configuration, set the optimization flag in CFLAGS
-CONFIG?=Debug
+# 
+# If CONFIG is manually edited, ensure to update or regenerate launch configurations 
+# for your IDE.
+CONFIG=Debug
 
 # If set to "true" or "1", display full command-lines when building.
 VERBOSE=
@@ -66,6 +74,8 @@ VERBOSE=
 # NOTE: Extra code must be called from your app to initialize AnyCloud OTA middleware.
 OTA_SUPPORT=1
 
+# Set to 1 to add OTA external Flash support.
+OTA_USE_EXTERNAL_FLASH?=1
 ################################################################################
 # Advanced Configuration
 ################################################################################
@@ -80,7 +90,7 @@ OTA_SUPPORT=1
 # ... then code in directories named COMPONENT_foo and COMPONENT_bar will be
 # added to the build
 #
-COMPONENTS=FREERTOS LWIP MBEDTLS
+COMPONENTS=FREERTOS PSOC6HAL LWIP MBEDTLS
 
 # Like COMPONENTS, but disable optional code that was enabled by default.
 DISABLE_COMPONENTS=
@@ -96,11 +106,11 @@ SOURCES=
 INCLUDES=./configs
 
 # Custom configuration of mbedtls library.
-MBEDTLSFLAGS = MBEDTLS_USER_CONFIG_FILE='"mbedtls_user_config.h"'
+MBEDTLSFLAGS = MBEDTLS_USER_CONFIG_FILE='"configs/mbedtls_user_config.h"'
 
 # Add additional defines to the build process (without a leading -D).
-DEFINES=$(MBEDTLSFLAGS) CYBSP_WIFI_CAPABLE CY_RETARGET_IO_CONVERT_LF_TO_CRLF
-DEFINES+=CY_MQTT_ENABLE_SECURE_TEST_MOSQUITTO_SUPPORT CY_RTOS_AWARE
+DEFINES=$(MBEDTLSFLAGS) CYBSP_WIFI_CAPABLE CY_RETARGET_IO_CONVERT_LF_TO_CRLF 
+DEFINES+=CY_RTOS_AWARE
 
 # CY8CPROTO-062-4343W board shares the same GPIO for the user button (SW2)
 # and the CYW4343W host wake up pin. Since this example uses the GPIO for
@@ -149,13 +159,21 @@ endif
 # Additional / custom libraries to link in to the application.
 LDLIBS=
 
+# Path to the linker script to use (if empty, use the default linker script).
+LINKER_SCRIPT=
+
 # Custom pre-build commands to run.
 PREBUILD=
 
 # Custom post-build commands to run.
 POSTBUILD=
 
-# Version of the app
+# Check for default Version values
+# Change the version here or over-ride by setting an environment variable
+# before building the application.
+#
+# export APP_VERSION_MAJOR=2
+#
 APP_VERSION_MAJOR?=1
 APP_VERSION_MINOR?=0
 APP_VERSION_BUILD?=0
@@ -173,18 +191,29 @@ ifeq ($(OTA_SUPPORT),1)
     #
     # Must be a multiple of 1024 (must leave __vectors on a 1k boundary)
     MCUBOOT_HEADER_SIZE=0x400
-    MCUBOOT_MAX_IMG_SECTORS=2000
-    CY_BOOT_SCRATCH_SIZE=0x00010000
-    # Boot loader size defines for mcuboot & app are different, but value is the same
-    MCUBOOT_BOOTLOADER_SIZE=0x00012000
-    CY_BOOT_BOOTLOADER_SIZE=$(MCUBOOT_BOOTLOADER_SIZE)
-    # Primary Slot Currently follows Bootloader sequentially
-    CY_BOOT_PRIMARY_1_START=0x00012000
-    CY_BOOT_PRIMARY_1_SIZE=0x000EE000
-    CY_BOOT_SECONDARY_1_SIZE=0x000EE000
-
-    # Change to non-zero if stored in external FLASH
-    CY_FLASH_ERASE_VALUE=0
+    ifeq ($(OTA_USE_EXTERNAL_FLASH),1)
+        MCUBOOT_MAX_IMG_SECTORS=2048
+        CY_BOOT_SCRATCH_SIZE=0x00010000
+        # Boot loader size defines for mcuboot & app are different, but value is the same
+        MCUBOOT_BOOTLOADER_SIZE=0x00018000
+        CY_BOOT_BOOTLOADER_SIZE=$(MCUBOOT_BOOTLOADER_SIZE)
+        # Primary Slot Currently follows Bootloader sequentially
+        CY_BOOT_PRIMARY_1_START=0x00018000
+        CY_BOOT_PRIMARY_1_SIZE=0x00100000
+        CY_BOOT_SECONDARY_1_SIZE=0x00100000
+        CY_FLASH_ERASE_VALUE=0xFF
+    else
+        MCUBOOT_MAX_IMG_SECTORS=2000
+        CY_BOOT_SCRATCH_SIZE=0x00010000
+        # Boot loader size defines for mcuboot & app are different, but value is the same
+        MCUBOOT_BOOTLOADER_SIZE=0x00018000
+        CY_BOOT_BOOTLOADER_SIZE=$(MCUBOOT_BOOTLOADER_SIZE)
+        # Primary Slot Currently follows Bootloader sequentially
+        CY_BOOT_PRIMARY_1_START=0x00018000
+        CY_BOOT_PRIMARY_1_SIZE=0x000EE000
+        CY_BOOT_SECONDARY_1_SIZE=0x000EE000
+        CY_FLASH_ERASE_VALUE=0x00
+    endif
 
     # Additional / custom linker flags.
     # This needs to be before finding LINKER_SCRIPT_WILDCARD as we need the extension defined
@@ -218,28 +247,29 @@ ifeq ($(OTA_SUPPORT),1)
     endif #GCC_ARM
 
     # Linker Script
-    LINKER_SCRIPT_WILDCARD:=./libs/anycloud-ota/$(TARGET_UNDERSCORE)/COMPONENT_$(CORE)/TOOLCHAIN_$(TOOLCHAIN)/ota/*_ota_int.$(CY_TOOLCHAIN_LS_EXT)
+    LINKER_SCRIPT_WILDCARD:=../mtb_shared/anycloud-ota/latest-v2.X/$(TARGET_UNDERSCORE)/COMPONENT_$(CORE)/TOOLCHAIN_$(TOOLCHAIN)/ota/*_ota_int.$(CY_TOOLCHAIN_LS_EXT)
     LINKER_SCRIPT:=$(wildcard $(LINKER_SCRIPT_WILDCARD))
 
-    # MCUBoot location
-    MCUBOOT_DIR=./libs/mcuboot
+    # MCUBoot flash support location
+    MCUBOOT_DIR=../mtb_shared/anycloud-ota/latest-v2.X/source/mcuboot
+
+    # MCU sign script location
+    ifeq ($(SIGN_SCRIPT_FILE_PATH),)
+        SIGN_SCRIPT_FILE_PATH=../mtb_shared/anycloud-ota/latest-v2.X/scripts/sign_script.bash
+    endif
 
     # build location
     BUILD_LOCATION=./build
-
-    # MCU sign script location
-    SIGN_SCRIPT_FILE_PATH=./libs/anycloud-ota/scripts/sign_script.bash
-
+    
     # output directory for use in the sign_script.bash
     OUTPUT_FILE_PATH=$(BUILD_LOCATION)/$(TARGET)/$(CONFIG)
 
     # signing scripts and keys from MCUBoot
     IMGTOOL_SCRIPT_NAME=imgtool.py
     MCUBOOT_SCRIPT_FILE_DIR=$(MCUBOOT_DIR)/scripts
-    MCUBOOT_KEY_DIR=$(MCUBOOT_DIR)/boot/cypress/keys
+    MCUBOOT_KEY_DIR=$(MCUBOOT_DIR)/keys
 
     DEFINES+=OTA_SUPPORT=1 \
-    OTA_MQTT_USE_TLS=$(OTA_MQTT_USE_TLS) \
     MCUBOOT_HEADER_SIZE=$(MCUBOOT_HEADER_SIZE) \
     MCUBOOT_MAX_IMG_SECTORS=$(MCUBOOT_MAX_IMG_SECTORS) \
     CY_BOOT_SCRATCH_SIZE=$(CY_BOOT_SCRATCH_SIZE) \
@@ -249,10 +279,16 @@ ifeq ($(OTA_SUPPORT),1)
     CY_BOOT_PRIMARY_1_START=$(CY_BOOT_PRIMARY_1_START) \
     CY_BOOT_PRIMARY_1_SIZE=$(CY_BOOT_PRIMARY_1_SIZE) \
     CY_BOOT_SECONDARY_1_SIZE=$(CY_BOOT_SECONDARY_1_SIZE) \
+    CY_BOOT_PRIMARY_2_SIZE=$(CY_BOOT_PRIMARY_2_SIZE) \
+    CY_BOOT_SECONDARY_2_START=$(CY_BOOT_SECONDARY_2_START) \
     CY_FLASH_ERASE_VALUE=$(CY_FLASH_ERASE_VALUE)\
     APP_VERSION_MAJOR=$(APP_VERSION_MAJOR)\
     APP_VERSION_MINOR=$(APP_VERSION_MINOR)\
     APP_VERSION_BUILD=$(APP_VERSION_BUILD)
+
+ifeq ($(OTA_USE_EXTERNAL_FLASH),1)
+    DEFINES+=CY_BOOT_USE_EXTERNAL_FLASH=1
+endif
 
     # Custom post-build commands to run.
     MCUBOOT_KEY_FILE=$(MCUBOOT_KEY_DIR)/cypress-test-ec-p256.pem
@@ -265,7 +301,7 @@ ifeq ($(OTA_SUPPORT),1)
     # CY_SIGNING_KEY_ARG="-k $(MCUBOOT_KEY_FILE)"
     IMGTOOL_COMMAND_ARG=create
     CY_SIGNING_KEY_ARG=" "
-
+    
     CY_HEX_TO_BIN="$(CY_COMPILER_GCC_ARM_DIR)/bin/arm-none-eabi-objcopy"
     CY_BUILD_VERSION=$(APP_VERSION_MAJOR).$(APP_VERSION_MINOR).$(APP_VERSION_BUILD)
 
@@ -286,9 +322,18 @@ endif # OTA Support
 # This controls where automatic source code discovery looks for code.
 CY_APP_PATH=
 
-# Relative path to the "base" library. It provides the core makefile build
-# infrastructure.
-CY_BASELIB_PATH=libs/psoc6make
+# Relative path to the shared repo location.
+#
+# All .mtb files have the format, <URI>#<COMMIT>#<LOCATION>. If the <LOCATION> field 
+# begins with $$ASSET_REPO$$, then the repo is deposited in the path specified by 
+# the CY_GETLIBS_SHARED_PATH variable. The default location is one directory level 
+# above the current app directory.
+# This is used with CY_GETLIBS_SHARED_NAME variable, which specifies the directory name.
+CY_GETLIBS_SHARED_PATH=../
+
+# Directory name of the shared repo location.
+#
+CY_GETLIBS_SHARED_NAME=mtb_shared
 
 # Absolute path to the compiler's "bin" directory.
 #
@@ -307,7 +352,7 @@ CY_TOOLS_PATHS ?= $(wildcard \
 
 # If you install ModusToolbox IDE in a custom location, add the path to its
 # "tools_X.Y" folder (where X and Y are the version number of the tools
-# folder).
+# folder). Make sure you use forward slashes.
 CY_TOOLS_PATHS+=
 
 # Default to the newest installed tools folder, or the users override (if it's
@@ -315,7 +360,7 @@ CY_TOOLS_PATHS+=
 CY_TOOLS_DIR=$(lastword $(sort $(wildcard $(CY_TOOLS_PATHS))))
 
 ifeq ($(CY_TOOLS_DIR),)
-$(error Unable to find any of the available CY_TOOLS_PATHS -- $(CY_TOOLS_PATHS))
+$(error Unable to find any of the available CY_TOOLS_PATHS -- $(CY_TOOLS_PATHS). On Windows, use forward slashes.)
 endif
 
 $(info Tools Directory: $(CY_TOOLS_DIR))

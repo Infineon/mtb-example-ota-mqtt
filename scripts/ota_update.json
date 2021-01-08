@@ -1,0 +1,13 @@
+{
+  "Message":"Update Available",
+  "Manufacturer":"Infineon",
+  "ManufacturerId":"ABCD123",
+  "Product":"EFGH456",
+  "SerialNumber":"ABC213450001",
+  "Board":"CY8CPROTO_062_4343W",
+  "Version":"1.0.0",
+  "Connection":"MQTT",
+  "Broker":"test.mosquitto.org",
+  "Port":"1883",
+  "UniqueTopicName":"replace"
+}
