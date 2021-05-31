@@ -45,13 +45,13 @@
 #include "cy_wcm.h"
 
 /* IoT SDK, Secure Sockets, and MQTT initialization */
-#include "iot_init.h"
-#include "cy_iot_network_secured_socket.h"
-#include "iot_mqtt.h"
+#include "cy_tcpip_port_secure_sockets.h"
 
 /* FreeRTOS header file */
 #include <FreeRTOS.h>
 #include <task.h>
+
+#include "cy_log.h"
 
 /* OTA API */
 #include "cy_ota_api.h"
@@ -84,17 +84,6 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data);
 /* OTA context */
 cy_ota_context_ptr ota_context;
 
-/* MQTT Credentials for OTA */
-struct IotNetworkCredentials credentials =
-{
-    .pRootCa = ROOT_CA_CERTIFICATE,
-    .rootCaSize = sizeof(ROOT_CA_CERTIFICATE),
-    .pClientCert = CLIENT_CERTIFICATE,
-    .clientCertSize = sizeof(CLIENT_CERTIFICATE),
-    .pPrivateKey = CLIENT_KEY,
-    .privateKeySize = sizeof(CLIENT_KEY),
-};
-
 /* Network parameters for OTA */
 cy_ota_network_params_t ota_network_params =
 {
@@ -102,22 +91,28 @@ cy_ota_network_params_t ota_network_params =
     {
         .broker =
         {
-            .pHostName = MQTT_BROKER_URL,
+            .host_name = MQTT_BROKER_URL,
             .port = MQTT_SERVER_PORT
         },
         .pTopicFilters = my_topics,
         .session_type = CY_OTA_MQTT_SESSION_CLEAN,
         .numTopicFilters = MQTT_TOPIC_FILTER_NUM,
         .pIdentifier = OTA_MQTT_ID,
-        .awsIotMqttMode = AWS_IOT_MQTT_MODE,
-#if (ENABLE_TLS == true)
-        .credentials = &credentials
-#else
-        .credentials = NULL
-#endif
+    #if (ENABLE_TLS == true)
+        .credentials =
+        {
+            .root_ca = ROOT_CA_CERTIFICATE,
+            .root_ca_size = sizeof(ROOT_CA_CERTIFICATE),
+            .client_cert = CLIENT_CERTIFICATE,
+            .client_cert_size = sizeof(CLIENT_CERTIFICATE),
+            .private_key = CLIENT_KEY,
+            .private_key_size = sizeof(CLIENT_KEY),
+        },
+    #endif
+        .awsIotMqttMode = AWS_IOT_MQTT_MODE
     },
     .use_get_job_flow = CY_OTA_JOB_FLOW,
-    .initial_connection = CY_OTA_CONNECTION_MQTT,
+    .initial_connection = CY_OTA_CONNECTION_MQTT
 };
 
 /* Parameters for OTA agent */
@@ -126,6 +121,8 @@ cy_ota_agent_params_t ota_agent_params =
     .cb_func = ota_callback,
     .cb_arg = &ota_context,
     .reboot_upon_completion = 1,
+    .validate_after_reboot = 1,
+    .do_not_send_result = 1
 };
 
 /*******************************************************************************
@@ -144,6 +141,12 @@ cy_ota_agent_params_t ota_agent_params =
 void ota_task(void *args)
 {
 
+    /* default for OTA logging to NOTiCE */
+    cy_ota_set_log_level(CY_LOG_WARNING);
+
+    /* Validate the update so we do not revert */
+    cy_ota_storage_validated();
+
 #ifdef CY_BOOT_USE_EXTERNAL_FLASH
     if (psoc6_qspi_init() != 0)
     {
@@ -159,29 +162,19 @@ void ota_task(void *args)
         CY_ASSERT(0);
     }
 
-    /* Initialize the underlying support code that is needed for OTA and MQTT */
-    if ( !IotSdk_Init() )
+    /* Initialize underlying support code that is needed for OTA and MQTT */
+    if (cy_awsport_network_init() != CY_RSLT_SUCCESS)
     {
-        printf("\n IotSdk_Init Failed.\n");
-        CY_ASSERT(0);
-    }
-
-    /* Call the Network Secured Sockets initialization function. */
-    if( IotNetworkSecureSockets_Init() != IOT_NETWORK_SUCCESS )
-    {
-        printf("\n IotNetworkSecureSockets_Init Failed.\n");
+        printf("\n Secure sockets initialization failed.\n");
         CY_ASSERT(0);
     }
 
     /* Initialize the MQTT subsystem */
-    if( IotMqtt_Init() != IOT_MQTT_SUCCESS )
+    if (cy_mqtt_init() != CY_RSLT_SUCCESS )
     {
-        printf("\n IotMqtt_Init Failed.\n");
+        printf("\n Initializing MQTT failed.\n");
         CY_ASSERT(0);
     }
-
-    /* Add the network interface to the OTA network parameters */
-    ota_network_params.network_interface = (void *)IOT_NETWORK_INTERFACE_CY_SECURE_SOCKETS;
 
     /* Initialize and start the OTA agent */
     if( cy_ota_agent_start(&ota_network_params, &ota_agent_params, &ota_context) != CY_RSLT_SUCCESS )
@@ -279,11 +272,14 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
             break;
 
         case CY_OTA_REASON_SUCCESS:
-            printf(">> APP CB OTA SUCCESS state:%d %s last_error:%s\n\n", cb_data->state, state_string, error_string);
+            printf(">> APP CB OTA SUCCESS state:%d %s last_error:%s\n\n",
+                    cb_data->state,
+                    state_string, error_string);
             break;
 
         case CY_OTA_REASON_FAILURE:
-            printf(">> APP CB OTA FAILURE state:%d %s last_error:%s\n\n", cb_data->state, state_string, error_string);
+            printf(">> APP CB OTA FAILURE state:%d %s last_error:%s\n\n",
+                    cb_data->state, state_string, error_string);
             break;
 
         case CY_OTA_REASON_STATE_CHANGE:
@@ -305,16 +301,20 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
                     /* NOTE:
                      *  HTTP - json_doc holds the MQTT JSON request doc
                      */
-                    if ((cb_data->broker_server.pHostName == NULL)  ||
+                    if ((cb_data->broker_server.host_name == NULL)  ||
                         ( cb_data->broker_server.port == 0)         ||
                         ( strlen(cb_data->unique_topic) == 0))
                     {
                         printf("ERROR in callback data: MQTT: server: %p port: %d topic: '%p'\n",
-                                cb_data->broker_server.pHostName, cb_data->broker_server.port, cb_data->unique_topic);
+                                cb_data->broker_server.host_name,
+                                cb_data->broker_server.port,
+                                cb_data->unique_topic);
                         cb_result = CY_OTA_CB_RSLT_OTA_STOP;
                     }
                     printf("MQTT: server:%s port: %d topic: '%s'\n",
-                            cb_data->broker_server.pHostName, cb_data->broker_server.port, cb_data->unique_topic);
+                            cb_data->broker_server.host_name,
+                            cb_data->broker_server.port,
+                            cb_data->unique_topic);
 
                     break;
 
@@ -324,7 +324,7 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
                      *  HTTP - json_doc holds the MQTT JSON request doc
                      */
                     printf("MQTT: '%s'\n", cb_data->json_doc);
-                    printf("                 topic: '%s' \n", cb_data->unique_topic);
+                    printf("topic: '%s' \n", cb_data->unique_topic);
                     break;
 
                 case CY_OTA_STATE_JOB_DISCONNECT:
@@ -332,7 +332,9 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
                     break;
 
                 case CY_OTA_STATE_JOB_PARSE:
-                    printf("APP CB OTA PARSE JOB: '%.*s' \n", strlen(cb_data->json_doc), cb_data->json_doc);
+                    printf("APP CB OTA PARSE JOB: '%.*s' \n",
+                            strlen(cb_data->json_doc),
+                            cb_data->json_doc);
                     break;
 
                 case CY_OTA_STATE_JOB_REDIRECT:
@@ -341,7 +343,8 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
 
                 case CY_OTA_STATE_DATA_CONNECT:
                     printf("APP CB OTA CONNECT FOR DATA using ");
-                    printf("MQTT: %s:%d \n", cb_data->broker_server.pHostName, cb_data->broker_server.port);
+                    printf("MQTT: %s:%d \n", cb_data->broker_server.host_name,
+                            cb_data->broker_server.port);
                     break;
 
                 case CY_OTA_STATE_DATA_DOWNLOAD:
@@ -349,8 +352,9 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
                     /* NOTE:
                      *  MQTT - json_doc holds the MQTT JSON request doc
                      */
-                    printf("MQTT: '%s' \n", cb_data->json_doc);
-                    printf("                       topic: '%s' \n", cb_data->unique_topic);
+                    printf("MQTT: '%.*s' \n", strlen(cb_data->json_doc),
+                            cb_data->json_doc);
+                    printf("topic: '%s'\n\n", cb_data->unique_topic);
                     break;
 
                 case CY_OTA_STATE_DATA_DISCONNECT:
@@ -362,8 +366,10 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
                     /* NOTE:
                      *  MQTT - json_doc holds the MQTT JSON request doc
                      */
-                    printf("MQTT: Broker:%s port: %d\n", cb_data->broker_server.pHostName, cb_data->broker_server.port);
-                    printf("                                      topic: '%s' \n", cb_data->unique_topic);
+                    printf("MQTT: Broker:%s port: %d\n",
+                            cb_data->broker_server.host_name,
+                            cb_data->broker_server.port);
+                    printf("topic: '%s' \n", cb_data->unique_topic);
                     break;
 
                 case CY_OTA_STATE_RESULT_SEND:
@@ -391,7 +397,13 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
                     break;
 
                 case CY_OTA_STATE_STORAGE_WRITE:
-                    printf("APP CB OTA STORAGE WRITE %ld%% (%ld of %ld)\n", cb_data->percentage, cb_data->bytes_written, cb_data->total_size);
+                    printf("APP CB OTA STORAGE WRITE %ld%% (%ld of %ld)\n",
+                            (unsigned long)cb_data->percentage,
+                            (unsigned long)cb_data->bytes_written,
+                            (unsigned long)cb_data->total_size);
+
+                    /* Move cursor to previous line */
+                    printf("\x1b[1F");
                     break;
 
                 case CY_OTA_STATE_STORAGE_CLOSE:

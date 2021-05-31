@@ -50,6 +50,7 @@
 #include "cy_retarget_io.h"
 #include "ota_task.h"
 #include "led_task.h"
+#include "cy_log.h"
 
 /* FreeRTOS header file */
 #include <FreeRTOS.h>
@@ -95,6 +96,7 @@ volatile int uxTopUsedPriority;
 int main(void)
 {
     cy_rslt_t result ;
+    cyhal_wdt_t wdt_obj;
 
     /* This enables RTOS aware debugging in OpenOCD */
     uxTopUsedPriority = configMAX_PRIORITIES - 1 ;
@@ -114,10 +116,26 @@ int main(void)
     /* Enable global interrupts. */
     __enable_irq();
 
-    printf("===============================================================\n");
+    /* default for all logging to WARNING */
+    cy_log_init(CY_LOG_WARNING, NULL, NULL);
+
+    printf("\r===============================================================\n");
     printf("TEST Application: OTA Update version: %d.%d.%d\n",
             APP_VERSION_MAJOR, APP_VERSION_MINOR, APP_VERSION_BUILD);
     printf("===============================================================\n\n");
+
+#ifdef TEST_REVERT
+    printf("===============================================================\n");
+    printf("Testing revert feature, entering infinite loop !!!\n\n");
+    printf("===============================================================\n\n");
+    while(true);
+#endif
+
+    /* Clear watchdog timer so that it doesn't trigger a reset */
+    cyhal_wdt_init(&wdt_obj, cyhal_wdt_get_max_timeout_ms());
+    cyhal_wdt_free(&wdt_obj);
+
+    printf("\nWatchdog timer started by the bootloader is now turned off!!!\n\n");
 
     /* Create the tasks */
     xTaskCreate(ota_task, "OTA TASK", OTA_TASK_STACK_SIZE, NULL,

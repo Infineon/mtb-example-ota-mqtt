@@ -8,6 +8,8 @@ import sys
 import threading
 import time
 import traceback
+import re
+import ssl
 
 random.seed()
 
@@ -166,6 +168,20 @@ random.seed()
 #       ... other info as desired ...
 #   }
 #
+# To request a chunk of data
+#
+#   {
+#       "Message": "Request Data Chunk",
+#       "Manufacturer":"Express Widgits Corporation",
+#       "ManufacturerId":"EWCO",
+#       "Product":"Easy Widgit",
+#       "SerialNumber":"ABC213450001",
+#       "Board":"CY8CPROTO_062_4343W",
+#       "Version":"1.2.0",
+#       "Offset":"0",
+#       "Length":"4096"
+#   }
+#
 #==============================================================================
 # Debugging help
 #   To turn on logging, Set DEBUG_LOG to 1 (or use command line arg "-l")
@@ -195,6 +211,7 @@ BAD_JSON_DOC = "MALFORMED JSON DOCUMENT"            # Bad incoming message
 UPDATE_AVAILABLE_REQUEST = "Update Availability"    # Device requests if there is an Update avaialble
 SEND_UPDATE_REQUEST = "Request Update"              # Device requests Publisher send the OTA Image
 SEND_DIRECT_UPDATE = "Send Direct Update"           # Device sent Update Direct request
+SEND_CHUNK = "Request Data Chunk"                   # Device sent Request for a chunk of the data file
 REPORTING_RESULT_SUCCESS = "Success"                # Device sends the OTA result Success
 REPORTING_RESULT_FAILURE = "Failure"                # Device sends the OTA result Failure
 
@@ -204,6 +221,7 @@ MSG_TYPE_SEND_UPDATE = 2            # Device sent SEND_UPDATE_REQUEST
 MSG_TYPE_RESULT_SUCCESS = 3         # Device sent REPORTING_RESULT_SUCCESS
 MSG_TYPE_RESULT_FAILURE = 4         # Device sent REPORTING_RESULT_FAILURE
 MSG_TYPE_SEND_DIRECT = 5            # Device sent SEND_DIRECT_UPDATE
+MSG_TYPE_SEND_CHUNK = 6             # Device sent SEND_CHUNK
 
 NO_AVAILABLE_REPONSE = "No Update Available"    # Publisher sends back to Device when no update available
 AVAILABLE_REPONSE = "Update Available"          # Publisher sends back to Device when update is available
@@ -226,8 +244,11 @@ ECLIPSE_BROKER_ADDRESS = "mqtt.eclipse.org"
 # Set the Broker using command line arguments "-b mosquitto"
 MOSQUITTO_BROKER_ADDRESS = "test.mosquitto.org"
 
+# Set the Broker using command line arguments "-b mosquitto_local"
+MOSQUITTO_BROKER_LOCAL_ADDRESS = "192.168.0.1"
+
 # default is mosquitto
-BROKER_ADDRESS = MOSQUITTO_BROKER_ADDRESS
+BROKER_ADDRESS = MOSQUITTO_BROKER_LOCAL_ADDRESS
 
 TLS_ENABLED = False         # turn on with "tls" argument on command line when invoking this script
 
@@ -236,7 +257,7 @@ PUBLISHER_PUBLISH_QOS = 1     # AWS broker does not support QOS of 2
 PUBLISHER_SUBSCRIBE_QOS = 1   # AWS broker does not support QOS of 2
 
 # Path to the firmware image
-OTA_IMAGE_FILE = "../build/" + KIT.replace("_","-") + "/Debug/mtb-example-anycloud-ota-mqtt.bin"
+OTA_IMAGE_FILE = "../build/CY8CPROTO-062-4343W/Debug/mtb-example-anycloud-ota-mqtt.bin"
 
 # Paho MQTT client settings
 MQTT_KEEP_ALIVE = 60 # in seconds
@@ -257,6 +278,8 @@ VERSION_BUILD = 0
 
 MAGIC_POS = 0               # offset in header of HEADER_MAGIC
 DATA_START_POS = 1          # offset in header of offset in packet where the data chunk starts
+TOTAL_FILE_SIZE_POS = 6     # offset in header of the total file size
+FILE_OFFSET_POS = 7         # offset in header of the offset within the full file
 PAYLOAD_SIZE_POS = 8        # offset in header of the size of the data in this chunk
 TOTAL_PAYLOADS_POS = 9      # offset in header of the total number of payloads to send
 PAYLOAD_INDEX_POS = 10      # offset in header of the index of THIS payload
@@ -311,7 +334,6 @@ def on_send_log(client, userdata, level, buf):
 #
 #==============================================================================
 
-
 # ---------------------------------------------------------
 #   do_chunking()
 #       Break the large file into smaller chunks,
@@ -319,28 +341,37 @@ def on_send_log(client, userdata, level, buf):
 #   image_file    - name of OTA Image file to send to Device
 # ---------------------------------------------------------
 
-def do_chunking(image_file):
+def do_chunking(image_file, whole_file, file_offset, send_size):
     global terminate
-    image_size = os.path.getsize(image_file)
-    pub_total_payloads = image_size//CHUNK_SIZE
-
-    if ((image_size % CHUNK_SIZE) != 0):
+    offset = 0                                      # assume start at 0
+    image_size = os.path.getsize(image_file)        # assume full file
+    payload_index = 0
+    pub_total_payloads = image_size//send_size      # determine # payloads based on file size and chunk size
+    if ((image_size % send_size) != 0):
         pub_total_payloads += 1
 
-    print("Image Size: " + str(image_size) + ", Total Payloads: " + str(pub_total_payloads))
+    if (whole_file == False):
+        offset = file_offset
+        payload_index = int(file_offset/send_size)
+        if DEBUG_LOG:
+            print("Send Image CHUNK offset: " + str(file_offset) + "Image size: " + str(image_size) + " idx: " + str(payload_index) )
+    else:
+        print("Image Size: " + str(image_size) + " Offset: " + str(file_offset) + ", Total Payloads: " + str(pub_total_payloads))
 
     with open(image_file, 'rb') as image:
-        offset = 0
-        payload_index = 0
         pub_mqtt_msgs = []
 
         while True:
             if terminate:
                 exit(0)
 
-            chunk = image.read(CHUNK_SIZE)
+            # read up to offset
+            image.seek(offset)
+            chunk = image.read(send_size)
+
             if chunk:
                 chunk_size = len(chunk)
+                # print("Trying to send chunk_size: " + str(chunk_size))
                 packet = bytearray(HEADER_SIZE)
 
                 # MQTT payload (chunk) header format is defined in anycloud-ota/source/cy_ota_mqtt.c
@@ -364,15 +395,39 @@ def do_chunking(image_file):
                                   VERSION_BUILD, image_size, offset, chunk_size, pub_total_payloads,
                                   payload_index)
 
+                # print header info
+                # if (DEBUG_LOG == True):
+                #    header = struct.unpack('<8s5H2I3H', packet[0:HEADER_SIZE])
+                #    data_start = header[DATA_START_POS]
+                #    print("    data start:" + str(data_start))
+                #    file_size = header[TOTAL_FILE_SIZE_POS]
+                #    print("     file size:" + str(file_size))
+                #    off = header[FILE_OFFSET_POS]
+                #    print("   file offset:" + str(off))
+                #    payload_size = header[PAYLOAD_SIZE_POS]
+                #    print("  payload size:" + str(payload_size))
+                #    payload_index = header[PAYLOAD_INDEX_POS]
+                #    print(" payload index:" + str(payload_index))
+                #    total_payload = header[TOTAL_PAYLOADS_POS]
+                #    print("  num  payload:" + str(total_payload))
+
                 packet += chunk
                 pub_mqtt_msgs.append(packet)
 
                 offset += chunk_size
                 payload_index += 1
+
             else:
                 break
 
-        return pub_mqtt_msgs,pub_total_payloads
+            if (whole_file == False):
+                # just one chunk here
+                # we have already sent the chunk, return from this routine
+                if DEBUG_LOG:
+                    print(" CHUNK Queued " + str(payload_index) + " chunks")
+                return pub_mqtt_msgs,pub_total_payloads
+
+    return pub_mqtt_msgs,pub_total_payloads
 
 # -----------------------------------------------------------
 #   parse_incoming_request()
@@ -393,7 +448,8 @@ def parse_incoming_request(message_string):
         return BAD_JSON_DOC,MSG_TYPE_ERROR,BAD_JSON_DOC
 
     try:
-        print("\r\nABOUT To PARSE:\r\n'" + message_string + "'\r\n")
+        if (DEBUG_LOG):
+            print("\r\nABOUT To PARSE:\r\n'" + message_string + "'\r\n")
         request_json = json.loads(message_string)
     except Exception as e:
         print("Exception Occurred during json parse ... Exiting...")
@@ -438,6 +494,14 @@ def parse_incoming_request(message_string):
         #
         return request,MSG_TYPE_SEND_DIRECT,PUBLISHER_DIRECT_REQUEST_TOPIC
 
+    if request == SEND_CHUNK:
+        #
+        # Send a chunk of data update on PUBLISHER_DIRECT_REQUEST_TOPIC
+        #
+        if (DEBUG_LOG):
+            print(" SUBSCRIBER ASKED FOR A SINGLE CHUNK !!!!!")
+        return request,MSG_TYPE_SEND_CHUNK,unique_topic_name
+
     print("Could not understand the message!")
     return BAD_JSON_DOC,MSG_TYPE_ERROR,BAD_JSON_DOC
 # -----------------------------------------------------------
@@ -451,6 +515,78 @@ def on_send_connect(client, userdata, flags, rc):
 # -----------------------------------------------------------
 def on_send_publish(client, userdata, mid):
     client.publish_mid = mid
+
+
+# ---------------------------------------------------------
+#   send_image_chunk_thread()
+#       This is used in a separate thread.
+#       Call do_chunking() to send one chunk to the Device.
+#   message_string  - The Initial "Update Availability" message
+#   unique_topic    - The unique topic to send the OTA Image on.
+# ---------------------------------------------------------
+
+def send_image_chunk_thread(message_string, unique_topic):
+    global terminate
+
+    # Create unique MQTT ID
+    client_id = SEND_IMAGE_MQTT_CLIENT_ID + str(random.randint(0, 1024*1024*1024))
+    client_id = str.ljust(client_id, 24)  # limit to 24 characters
+    client_id = str.rstrip(client_id)
+    if DEBUG_LOG:
+        print("Send Image chunks: MQTT Connect on topic: " + unique_topic)
+
+    # Create a new client
+    send_client = MQTTSender(client_id)
+    if (DEBUG_LOG):
+        send_client.on_log = on_send_log
+
+    send_client.on_connect = on_send_connect
+    send_client.on_publish = on_send_publish
+    if TLS_ENABLED:
+        if BROKER_ADDRESS == MOSQUITTO_BROKER_LOCAL_ADDRESS:
+            send_client.tls_set(ca_certs, certfile, keyfile, cert_reqs=ssl.CERT_NONE)
+            send_client.tls_insecure_set(True)
+        else:
+            send_client.tls_set(ca_certs, certfile, keyfile)
+    send_client.connect(BROKER_ADDRESS, BROKER_PORT, MQTT_KEEP_ALIVE)
+    while send_client.connected_flag == False:
+        send_client.loop(0.1)
+        time.sleep(0.1)
+        if terminate:
+            exit(0)
+
+    try:
+        time_string = time.asctime()
+        if (DEBUG_LOG):
+            print("Send Chunk Begins..." + time_string + " ")
+
+        job_dict = json.loads(message_string)
+        offset = int(job_dict["Offset"])
+        size = int(job_dict["Size"])
+
+        pub_mqtt_msgs,pub_total_payloads = do_chunking(OTA_IMAGE_FILE, False, offset, size)
+
+        # print(" Sending Chunk  offset:" + str(offset) + " size:" + str(size) + " packet sz: " + str( len(pub_mqtt_msgs[0])) + " to: " + unique_topic)
+        result,messageID = send_client.publish(unique_topic, pub_mqtt_msgs[0], PUBLISHER_PUBLISH_QOS)
+        while send_client.publish_mid != messageID:
+            send_client.loop(0.1)
+            time.sleep(0.1)
+            if terminate:
+                exit(0)
+
+        time_string = time.asctime()
+        if (DEBUG_LOG):
+            print("Send Chunk Ends..." + time_string )
+
+    except Exception as e:
+        print("Exception Occurred... Exiting...")
+        print(str(e) + os.linesep)
+        traceback.print_exc()
+        exit(0)
+
+    # we're done
+    exit(0)
+
 
 # -----------------------------------------------------------
 #   send_image_thread()
@@ -477,7 +613,11 @@ def send_image_thread(message_string, unique_topic):
     send_client.on_connect = on_send_connect
     send_client.on_publish = on_send_publish
     if TLS_ENABLED:
-        send_client.tls_set(ca_certs, certfile, keyfile)
+        if BROKER_ADDRESS == MOSQUITTO_BROKER_LOCAL_ADDRESS:
+            send_client.tls_set(ca_certs, certfile, keyfile, cert_reqs=ssl.CERT_NONE)
+            send_client.tls_insecure_set(True)
+        else:
+            send_client.tls_set(ca_certs, certfile, keyfile)
     send_client.connect(BROKER_ADDRESS, BROKER_PORT, MQTT_KEEP_ALIVE)
     while send_client.connected_flag == False:
         send_client.loop(0.1)
@@ -488,13 +628,13 @@ def send_image_thread(message_string, unique_topic):
     try:
         time_string = time.asctime()
         print("Publishing Begins..." + time_string + " ")
-        pub_mqtt_msgs,pub_total_payloads = do_chunking(OTA_IMAGE_FILE)
+        pub_mqtt_msgs,pub_total_payloads = do_chunking(OTA_IMAGE_FILE, True, 0, CHUNK_SIZE)
 
         # for chunk in pub_mqtt_msgs:
         for chunk in range(0,pub_total_payloads):
             if terminate:
                 exit(0)
-            print(" Sending Chunk " + str(chunk)  + " of " + str(pub_total_payloads) + " to: " + unique_topic)
+            # print(" Sending Chunk " + str(chunk)  + " of " + str(pub_total_payloads) + " to: " + unique_topic)
             result,messageID = send_client.publish(unique_topic, pub_mqtt_msgs[chunk], PUBLISHER_PUBLISH_QOS)
             while send_client.publish_mid != messageID:
                 send_client.loop(0.1)
@@ -524,10 +664,17 @@ def send_image_thread(message_string, unique_topic):
 #   message  - Message sent from the Device
 # -----------------------------------------------------------
 def publisher_recv_message(client, userdata, message):
+    global VERSION_MAJOR
+    global VERSION_MINOR
+    global VERSION_BUILD
     # print("message received " ,str(message.payload.decode("utf-8")))
-    print("message topic=",message.topic)
+    # print("message topic=",message.topic)
     # print("message qos=",message.qos)
     # print("message retain flag=",message.retain)
+    # print("\nMessage Payload")
+    # for c in message.payload:
+    #    print( str(c) + "  " + str(int(c)))
+
     message_string = str(message.payload.decode("utf-8"))
     request,message_type,unique_topic = parse_incoming_request(message_string)
     # print("\nPublisher: Message received: " + request + " topic: " + unique_topic)
@@ -560,6 +707,15 @@ def publisher_recv_message(client, userdata, message):
             print(str(e) + os.linesep)
             traceback.print_exc()
             exit(0)
+
+        # Get version # from the JOB_MESSAGE_FILE for sending chunks later
+        update_app_version = job_dict["Version"]
+        print("JOB DOC VERSION: " + update_app_version)
+        VERSION_MAJOR_STR, VERSION_MINOR_STR, VERSION_BUILD_STR = re.split("\.", update_app_version)
+        VERSION_MAJOR = int(VERSION_MAJOR_STR)
+        VERSION_MINOR = int(VERSION_MINOR_STR)
+        VERSION_BUILD = int(VERSION_BUILD_STR)
+
         print("Publisher: Sending Job Doc: >" + job + "<")
         client.publish(unique_topic, job, PUBLISHER_PUBLISH_QOS)
         return
@@ -591,6 +747,20 @@ def publisher_recv_message(client, userdata, message):
         send_thread.start()
         return
 
+
+    # Handle incoming "Request Data Chunk" request
+    if message_type == MSG_TYPE_SEND_CHUNK:
+        #
+        # Possible Enhancement:
+        #   Determine the OTA Image file to send to the Device.
+
+        # print( "Publisher: Send Chunk of OTA Image on topic:" + unique_topic )
+
+        # Create a new thread to send the data. This will allow for multiple, overlapping requests.
+        print("Publisher: Start Sending CHUNK Thread")
+        send_thread = threading.Thread(None, send_image_chunk_thread, None, args=(message_string, unique_topic))
+        send_thread.start()
+        return
 
     # Handle incoming "result" notification
     if (message_type == MSG_TYPE_RESULT_SUCCESS) | (message_type == MSG_TYPE_RESULT_FAILURE):
@@ -647,8 +817,12 @@ def publisher_loop():
     pub_client.on_connect = on_connect
     pub_client.on_subscribe = on_subscribe
     if TLS_ENABLED:
-        pub_client.tls_set(ca_certs, certfile, keyfile)
-
+        if BROKER_ADDRESS == MOSQUITTO_BROKER_LOCAL_ADDRESS:
+            pub_client.tls_set(ca_certs, certfile, keyfile, cert_reqs=ssl.CERT_NONE)
+            pub_client.tls_insecure_set(True)
+        else:
+            pub_client.tls_set(ca_certs, certfile, keyfile)
+        
     pub_client.connect(BROKER_ADDRESS, BROKER_PORT, MQTT_KEEP_ALIVE)
     while pub_client.connected_flag == False:
         pub_client.loop(0.1)
@@ -658,14 +832,6 @@ def publisher_loop():
 
     print("Publisher: Waiting for Job request on: '" + PUBLISHER_JOB_REQUEST_TOPIC + "'" )
     result,messageID = pub_client.subscribe(PUBLISHER_JOB_REQUEST_TOPIC, PUBLISHER_SUBSCRIBE_QOS)
-    while pub_client.subscribe_mid != messageID:
-        pub_client.loop(0.1)
-        time.sleep(0.1)
-        if terminate:
-            exit(0)
-
-    print("Publisher: Waiting for Direct download request on: '" + PUBLISHER_DIRECT_REQUEST_TOPIC + "'" )
-    result,messageID = pub_client.subscribe(PUBLISHER_DIRECT_REQUEST_TOPIC, PUBLISHER_SUBSCRIBE_QOS)
     while pub_client.subscribe_mid != messageID:
         pub_client.loop(0.1)
         time.sleep(0.1)
@@ -694,16 +860,22 @@ def publisher_loop():
 # =====================================================================
 
 if __name__ == "__main__":
+    print("###########################################################################################################")
     print("Infineon Test MQTT Publisher.")
-    print("   Usage: 'python publisher.py [tls] [-l] [-b broker] [-k kit] [-f filepath]'")
+    print("Usage: 'python publisher.py [tls] [-l] [-b <broker>] [-k <kit>] [-f <filepath>]'")
+    print("<broker>       | [a] or [amazon] | [e] or [eclipse] | [m] or [mosquitto] | [ml] or [mosquitto_local] |")
+    print("<kit>          CY8CKIT_062S2_43012 | CY8CKIT_064B0S2_4343W | CY8CPROTO_062_4343W | CYSBSYSKIT_DEV_01")
+    print("<filepath>     The location of the OTA Image file to server to the device")
     print("Defaults: <non-TLS>")
     print("        : -f " + OTA_IMAGE_FILE)
-    print("        : -b mosquitto ")
+    print("        : -b mosquitto_local ")
     print("        : -k " + KIT)
     print("        : -l turn on extra logging")
+    print("###########################################################################################################")
     last_arg = ""
     for i, arg in enumerate(sys.argv):
-        # print(f"Argument {i:>4}: {arg}")
+        if arg == "-h" or arg == "--help":
+            sys.exit()
         if arg == "TLS" or arg == "tls":
             TLS_ENABLED = True
         if arg == "-l":
@@ -712,17 +884,22 @@ if __name__ == "__main__":
         if last_arg == "-f":
             OTA_IMAGE_FILE = arg
         if last_arg == "-b":
-            if arg == "amazon":
+            if ((arg == "amazon") | (arg == "a")):
                 BROKER_ADDRESS = AMAZON_BROKER_ADDRESS
-            if arg == "eclipse":
+            if ((arg == "eclipse") | (arg == "e")):
                 BROKER_ADDRESS = ECLIPSE_BROKER_ADDRESS
-            if arg == "mosquitto":
+            if ((arg == "mosquitto") | (arg == "m")):
                 BROKER_ADDRESS = MOSQUITTO_BROKER_ADDRESS
+            if ((arg == "mosquitto_local") | (arg == "ml")):
+                BROKER_ADDRESS = MOSQUITTO_BROKER_LOCAL_ADDRESS
         if last_arg == "-k":
             KIT = arg
         last_arg = arg
 
 print("\n")
+
+OTA_IMAGE_FILE = "../build/" + KIT.replace("_","-") + "/Debug/mtb-example-anycloud-ota-mqtt.bin"
+
 if TLS_ENABLED:
     print("   Using TLS")
 else:
@@ -731,6 +908,7 @@ print("   Using BROKER: " + BROKER_ADDRESS)
 print("   Using    KIT: " + KIT)
 print("   Using   File: " + OTA_IMAGE_FILE)
 print("   extra debug : " + DEBUG_LOG_STRING)
+
 
 PUBLISHER_JOB_REQUEST_TOPIC = COMPANY_TOPIC_PREPEND + "/" + KIT + "/" + PUBLISHER_LISTEN_TOPIC
 print("PUBLISHER_JOB_REQUEST_TOPIC   : " + PUBLISHER_JOB_REQUEST_TOPIC)
@@ -746,7 +924,12 @@ print("\n")
 #
 if TLS_ENABLED:
     BROKER_PORT = 8883
-    if BROKER_ADDRESS == MOSQUITTO_BROKER_ADDRESS:
+    if BROKER_ADDRESS == MOSQUITTO_BROKER_LOCAL_ADDRESS:
+        BROKER_PORT = 8884
+        ca_certs = "mosquitto_ca.crt"
+        certfile = "mosquitto_client.crt"
+        keyfile  = "mosquitto_client.key"
+    elif BROKER_ADDRESS == MOSQUITTO_BROKER_ADDRESS:
         BROKER_PORT = 8884
         ca_certs = "mosquitto.org.crt"
         certfile = "mosquitto_client.crt"

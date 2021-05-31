@@ -56,19 +56,18 @@
 #define WIFI_SECURITY       (CY_WCM_SECURITY_WPA2_AES_PSK)
 
 /* MQTT Broker endpoint */
-#define MQTT_BROKER_URL     "test.mosquitto.org"
-
-/* MQTT Server Port */
-/************************************************************
- * Server Port for https://test.mosquitto.org/
- * MQTT:        1883 un-encrypted
- * secure MQTT: 8883 encrypted
- * secure MQTT: 8884 encrypted, client certificate required
- ************************************************************/
-#define MQTT_SERVER_PORT    (1883)
+#define MQTT_BROKER_URL     "192.168.0.1"
 
 /* Macro to enable/disable TLS */
-#define ENABLE_TLS          (false)
+#define ENABLE_TLS          (true)
+
+#if (ENABLE_TLS == true)
+/* MQTT Server Port */
+#define MQTT_SERVER_PORT    (8884)
+#else
+/* MQTT Server Port */
+#define MQTT_SERVER_PORT    (1884)
+#endif
 
 /* MQTT identifier - less than 17 characters*/
 #define OTA_MQTT_ID         "CY_IOT_DEVICE"
@@ -98,7 +97,7 @@ const char * my_topics[ MQTT_TOPIC_FILTER_NUM ] =
         ".........base64 data.......\n" \
         "-----END CERTIFICATE-------\n"
 */
-#define ROOT_CA_CERTIFICATE     ""
+#define ROOT_CA_CERTIFICATE ""
 
 /* Client Certificate
    Must include the PEM header and footer:
@@ -107,8 +106,7 @@ const char * my_topics[ MQTT_TOPIC_FILTER_NUM ] =
         ".........base64 data.......\n" \
         "-----END CERTIFICATE-------\n"
 */
-#define CLIENT_CERTIFICATE      ""
-
+#define CLIENT_CERTIFICATE ""
 
 /* Private Key
    Must include the PEM header and footer:
@@ -117,6 +115,6 @@ const char * my_topics[ MQTT_TOPIC_FILTER_NUM ] =
         "...........base64 data.........\n" \
         "-----END RSA PRIVATE KEY-------\n"
 */
-#define CLIENT_KEY              ""
+#define CLIENT_KEY ""
 
 #endif /* SOURCE_OTA_APP_CONFIG_H_ */

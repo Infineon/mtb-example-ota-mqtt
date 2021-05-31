@@ -7,7 +7,7 @@
   "Board":"CY8CPROTO_062_4343W",
   "Version":"1.0.0",
   "Connection":"MQTT",
-  "Broker":"test.mosquitto.org",
-  "Port":"1883",
+  "Broker":"192.168.0.1",
+  "Port":"8884",
   "UniqueTopicName":"replace"
 }
