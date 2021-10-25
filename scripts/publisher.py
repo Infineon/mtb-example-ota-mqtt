@@ -14,7 +14,7 @@ import ssl
 random.seed()
 
 #
-#   This is the MQTT Publisher for AnyCloud OTA device updating.
+#   This is the MQTT Publisher for performing OTA firmware update.
 #   It is intended to be used with an MQTT Broker that does NOT
 #   have the ability to save OTA Images. This allows Devices
 #   to connect at any time and request an update.
@@ -860,18 +860,18 @@ def publisher_loop():
 # =====================================================================
 
 if __name__ == "__main__":
-    print("###########################################################################################################")
+    print("################################################################################################################################")
     print("Infineon Test MQTT Publisher.")
     print("Usage: 'python publisher.py [tls] [-l] [-b <broker>] [-k <kit>] [-f <filepath>]'")
     print("<broker>       | [a] or [amazon] | [e] or [eclipse] | [m] or [mosquitto] | [ml] or [mosquitto_local] |")
-    print("<kit>          CY8CKIT_062S2_43012 | CY8CKIT_064B0S2_4343W | CY8CPROTO_062_4343W | CYSBSYSKIT_DEV_01")
+    print("<kit>          CY8CKIT_062S2_43012 | CY8CKIT_064B0S2_4343W | CY8CPROTO_062_4343W | CYSBSYSKIT_DEV_01 | CY8CEVAL_062S2_LAI_4373M2")
     print("<filepath>     The location of the OTA Image file to server to the device")
     print("Defaults: <non-TLS>")
     print("        : -f " + OTA_IMAGE_FILE)
     print("        : -b mosquitto_local ")
     print("        : -k " + KIT)
     print("        : -l turn on extra logging")
-    print("###########################################################################################################")
+    print("################################################################################################################################")
     last_arg = ""
     for i, arg in enumerate(sys.argv):
         if arg == "-h" or arg == "--help":

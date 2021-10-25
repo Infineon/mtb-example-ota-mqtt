@@ -77,6 +77,7 @@
 ********************************************************************************/
 cy_rslt_t connect_to_wifi_ap(void);
 cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data);
+void print_heap_usage(char *msg);
 
 /*******************************************************************************
 * Global Variables
@@ -264,6 +265,8 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
 
     state_string  = cy_ota_get_state_string(cb_data->state);
     error_string  = cy_ota_get_error_string(cy_ota_get_last_error());
+
+    print_heap_usage("In OTA Callback");
 
     switch (cb_data->reason)
     {

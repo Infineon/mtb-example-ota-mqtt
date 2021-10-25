@@ -76,9 +76,6 @@ TaskHandle_t ota_task_handle;
 /* LED task handle */
 TaskHandle_t led_task_handle;
 
-/* This enables RTOS aware debugging. */
-volatile int uxTopUsedPriority;
-
 /*******************************************************************************
  * Function Name: main
  ********************************************************************************
@@ -97,9 +94,6 @@ int main(void)
 {
     cy_rslt_t result ;
     cyhal_wdt_t wdt_obj;
-
-    /* This enables RTOS aware debugging in OpenOCD */
-    uxTopUsedPriority = configMAX_PRIORITIES - 1 ;
 
     /* Initialize the board support package */
     result = cybsp_init() ;

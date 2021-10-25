@@ -73,7 +73,7 @@ CONFIG=Debug
 VERBOSE=
 
 # Set to 1 to add OTA defines, sources, and libraries (must be used with MCUBoot)
-# NOTE: Extra code must be called from your app to initialize AnyCloud OTA middleware.
+# NOTE: Extra code must be called from your app to initialize the OTA middleware.
 OTA_SUPPORT=1
 
 # Set to 1 to add OTA external Flash support.
@@ -233,7 +233,7 @@ ifeq ($(OTA_SUPPORT),1)
     LDFLAGS+="-Wl,--defsym,MCUBOOT_HEADER_SIZE=$(MCUBOOT_HEADER_SIZE),--defsym,MCUBOOT_BOOTLOADER_SIZE=$(MCUBOOT_BOOTLOADER_SIZE),--defsym,CY_BOOT_PRIMARY_1_SIZE=$(CY_BOOT_PRIMARY_1_SIZE)"
     else
     ifeq ($(TOOLCHAIN),IAR)
-    CY_ELF_TO_HEX=$(CY_CROSSPATH)/bin/ielftool
+    CY_ELF_TO_HEX="$(CY_CROSSPATH)/bin/ielftool"
     CY_ELF_TO_HEX_OPTIONS="--ihex"
     CY_ELF_TO_HEX_FILE_ORDER="elf_first"
     CY_TOOLCHAIN_LS_EXT=icf
