@@ -8,18 +8,18 @@ The OTA feature is enabled by the *Over-the-air update middleware library*. See 
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-anycloud-ota-mqtt)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6Inlla3QiLCJEb2MgdmVyc2lvbiI6IjMuMS4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJQU09DIn0=)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6Inlla3QiLCJEb2MgdmVyc2lvbiI6IjQuMC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJQU09DIn0=)
 
 ## Requirements
 
-- [ModusToolbox&trade; software](https://www.cypress.com/products/modustoolbox-software-environment) v2.3
-- Board support package (BSP) minimum required version: 2.0.0
+- [ModusToolbox&trade; software](https://www.cypress.com/products/modustoolbox-software-environment) v2.4 or later.
+- Board support package (BSP) minimum required version: 3.0.0
 - Programming language: C
 - Associated parts: All [PSoC&trade; 6 MCU](http://www.cypress.com/PSoC6) parts with SDIO interface
 
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
-- GNU Arm® embedded compiler v9.3.1 (`GCC_ARM`) - Default value of `TOOLCHAIN`
+- GNU Arm® embedded compiler v10.3.1 (`GCC_ARM`) - Default value of `TOOLCHAIN`
 - Arm&reg; compiler v6.13 (`ARM`)
 - IAR C/C++ compiler v8.42.2 (`IAR`)
 
@@ -30,7 +30,7 @@ This example requires PSoC&trade; 6 MCU devices with at least 2-MB flash and 1-M
 
 - [PSoC&trade; 6 Wi-Fi Bluetooth&reg; prototyping kit](https://www.cypress.com/CY8CPROTO-062-4343W) (`CY8CPROTO-062-4343W`) - Default value of `TARGET`
 - [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; pioneer kit](https://www.cypress.com/CY8CKIT-062S2-43012) (`CY8CKIT-062S2-43012`)
-- [PSoC&trade; 62S2 evaluation kit](https://www.cypress.com/CY8CEVAL-062S2) (`CY8CEVAL-062S2-LAI-4373M2`)
+- [PSoC&trade; 62S2 evaluation kit](https://www.cypress.com/CY8CEVAL-062S2) (`CY8CEVAL-062S2-LAI-4373M2`, `CY8CEVAL-062S2-MUR-43439M2`)
 
 ## Hardware setup
 
@@ -339,18 +339,18 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
    2. Modify the value of `Board` to match the kit you are using.
 
-   3. In Step 3, if the code example has been configured to work in non-TLS mode: Set the value of `Port` to `1883`.
+   3. In **Step 3**, if the code example has been configured to work in non-TLS mode: Set the value of `Port` to `1883`.
 
 5. Program the board using one of the following:
 
-   <details open><summary><b>Using Eclipse IDE for ModusToolbox&trade; software</b></summary>
+   <details><summary><b>Using Eclipse IDE for ModusToolbox&trade; software</b></summary>
 
       1. Select the application project in the Project Explorer.
 
       2. In the **Quick Panel**, scroll down, and click **\<Application Name> Program (KitProg3_MiniProg4)**.
    </details>
 
-   <details open><summary><b>Using CLI</b></summary>
+   <details><summary><b>Using CLI</b></summary>
 
      From the terminal, execute the `make program` command to build and program the application using the default toolchain to the default target. The default toolchain and target are specified in the application's Makefile but you can override those values manually:
       ```
@@ -363,7 +363,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
       ```
    </details>
 
-   At this point, the primary slot is programmed. The CM4 CPU starts running the image from the primary slot on reset. Observe the messages on the UART terminal and wait for the device to make the required connections as shown in Figure 2. Observe that the user LED blinks at 1 Hz.
+   At this point, the primary slot is programmed. The CM4 CPU starts running the image from the primary slot on reset. Observe the messages on the UART terminal and wait for the device to make the required connections as shown in **Figure 2**. Observe that the user LED blinks at 1 Hz.
 
    **Figure 2. Connection to the MQTT broker**
 
@@ -382,7 +382,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
       2. In the **Quick Panel**, scroll down, and click **Build \<OTA Application> Application**.
    </details>
 
-   </details open><summary><b>Using CLI</b></summary>
+<details><summary><b>Using CLI</b></summary>
 
       1. From the terminal, execute the `make build` command to build the application using the default toolchain to the default target. You can specify a target and toolchain manually:
          ```
@@ -412,7 +412,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
 13. Edit the app version in the *\<OTA Application>/Makefile* by setting `APP_VERSION_MINOR` to '2'.
 
-14. Build the application per Step 8.
+14. Build the application per **Step 8**.
 
 15. After a successful build, edit the *\<OTA Application>/scripts/ota_update.json* file to modify the value of `Version` to `1.2.0`.
 
@@ -453,7 +453,7 @@ All the scripts and configurations needed for this example are placed under the 
 
 The *\<OTA Application>/configs/* folder contains other configurations related to the OTA middleware, FreeRTOS, and MBEDTLS.
 
-Figure 4 shows the flow of the OTA update process using MQTT. The application which needs OTA updates should run the OTA agent. The OTA agent spawns threads to receive OTA updates when available, without intervening with the application's core functionality.
+**Figure 4** shows the flow of the OTA update process using MQTT. The application which needs OTA updates should run the OTA agent. The OTA agent spawns threads to receive OTA updates when available, without intervening with the application's core functionality.
 
 The initial application resides in the primary slot of the flash memory. When the OTA agent receives an update, the new image is placed in the secondary slot of the flash memory. On the next reboot, MCUboot copies the image from the secondary slot into the primary slot and then CM4 will boot the upgraded image from the primary slot.
 
@@ -503,7 +503,7 @@ For PSoC&trade; 6 MCU devices, see [How to design with PSoC&trade; 6 MCU - KBA22
 Document title: *CE230031* - *Over-the-air firmware update using MQTT*
 
  Version | Description of change
- ------- | ------------------------------------------------------------
+ ------- | ---------------------
  1.0.0   | New code example
  1.1.0   | Minor Makefile updates to sync with BSP changes
  1.2.0   | Updated the *.cyignore* file to support new build system changes
@@ -512,10 +512,10 @@ Document title: *CE230031* - *Over-the-air firmware update using MQTT*
  2.2.0   | Updated the configuration file to support MbedTLS v2.22.0
  3.0.0   | Update to:<br>1. Support ota v4.X library <br>2. Use locally installed Mosquitto broker <br>3. Support swap upgrade with MCUboot
  3.1.0   | Added support for the kit CY8CEVAL-062S2-LAI-4373M2
+ 4.0.0   | Updated to support ModusToolbox&trade; software v2.4 and BSP v3.X<br /> Added support for CY8CEVAL-062S2-MUR-43439M2 kit
 
 <br>
 
----------------------------------------------------------
 
 © Cypress Semiconductor Corporation, 2020-2021. This document is the property of Cypress Semiconductor Corporation, an Infineon Technologies company, and its affiliates ("Cypress").  This document, including any software or firmware included or referenced in this document ("Software"), is owned by Cypress under the intellectual property laws and treaties of the United States and other countries worldwide.  Cypress reserves all rights under such laws and treaties and does not, except as specifically stated in this paragraph, grant any license under its patents, copyrights, trademarks, or other intellectual property rights.  If the Software is not accompanied by a license agreement and you do not otherwise have a written agreement with Cypress governing the use of the Software, then Cypress hereby grants you a personal, non-exclusive, nontransferable license (without the right to sublicense) (1) under its copyright rights in the Software (a) for Software provided in source code form, to modify and reproduce the Software solely for use with Cypress hardware products, only internally within your organization, and (b) to distribute the Software in binary code form externally to end users (either directly or indirectly through resellers and distributors), solely for use on Cypress hardware product units, and (2) under those claims of Cypress’s patents that are infringed by the Software (as provided by Cypress, unmodified) to make, use, distribute, and import the Software solely for use with Cypress hardware products.  Any other use, reproduction, modification, translation, or compilation of the Software is prohibited.
 <br>

@@ -10,7 +10,6 @@
 * over to the primary slot and run the application.
 *
 * Related Document: See Readme.md
-*
 ********************************************************************************
 * Copyright 2020-2021, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
