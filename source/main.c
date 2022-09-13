@@ -11,7 +11,7 @@
 *
 * Related Document: See Readme.md
 ********************************************************************************
-* Copyright 2020-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2020-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -110,7 +110,7 @@ int main(void)
     __enable_irq();
 
     /* default for all logging to WARNING */
-    cy_log_init(CY_LOG_WARNING, NULL, NULL);
+    cy_log_init(CY_LOG_INFO, NULL, NULL);
 
     printf("\r===============================================================\n");
     printf("TEST Application: OTA Update version: %d.%d.%d\n",

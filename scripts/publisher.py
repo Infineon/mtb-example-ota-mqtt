@@ -257,7 +257,7 @@ PUBLISHER_PUBLISH_QOS = 1     # AWS broker does not support QOS of 2
 PUBLISHER_SUBSCRIBE_QOS = 1   # AWS broker does not support QOS of 2
 
 # Path to the firmware image
-OTA_IMAGE_FILE = "../build/CY8CPROTO-062-4343W/Debug/mtb-example-anycloud-ota-mqtt.bin"
+OTA_IMAGE_FILE = "../build/CY8CPROTO-062-4343W/Debug/mtb-example-ota-mqtt.bin"
 
 # Paho MQTT client settings
 MQTT_KEEP_ALIVE = 60 # in seconds
@@ -268,7 +268,7 @@ MQTT_KEEP_ALIVE = 60 # in seconds
 CHUNK_SIZE = (4 * 1024)
 
 # OTA header information - MUST match Device structure cy_ota_mqtt_chunk_payload_header_s
-#                          defined in anycloud-ota/source/cy_ota_mqtt.c !!
+#                          defined in ota-update/source/cy_ota_mqtt.c !!
 HEADER_SIZE = 32            # Total header size in bytes
 HEADER_MAGIC = "OTAImage"   # "Magic" string to identify the header
 IMAGE_TYPE = 0
@@ -374,7 +374,7 @@ def do_chunking(image_file, whole_file, file_offset, send_size):
                 # print("Trying to send chunk_size: " + str(chunk_size))
                 packet = bytearray(HEADER_SIZE)
 
-                # MQTT payload (chunk) header format is defined in anycloud-ota/source/cy_ota_mqtt.c
+                # MQTT payload (chunk) header format is defined in ota-update/source/cy_ota_mqtt.c
                 # typedef struct cy_ota_mqtt_chunk_payload_header_s {
                 #     const char      magic[8];                          /* "OTAImage"                                            */
                 #     const uint16_t  offset_to_data;                    /* Offset within this payload to start of data           */
@@ -716,7 +716,7 @@ def publisher_recv_message(client, userdata, message):
         VERSION_MINOR = int(VERSION_MINOR_STR)
         VERSION_BUILD = int(VERSION_BUILD_STR)
 
-        print("Publisher: Sending Job Doc: >" + job + "<")
+        print("Publisher: Sending on topic:" + unique_topic + "Job Doc: >" + job + "<")
         client.publish(unique_topic, job, PUBLISHER_PUBLISH_QOS)
         return
 
@@ -864,7 +864,7 @@ if __name__ == "__main__":
     print("Infineon Test MQTT Publisher.")
     print("Usage: 'python publisher.py [tls] [-l] [-b <broker>] [-k <kit>] [-f <filepath>]'")
     print("<broker>       | [a] or [amazon] | [e] or [eclipse] | [m] or [mosquitto] | [ml] or [mosquitto_local] |")
-    print("<kit>          CY8CKIT_062S2_43012 | CY8CKIT_064B0S2_4343W | CY8CPROTO_062_4343W | CYSBSYSKIT_DEV_01 | CY8CEVAL_062S2_LAI_4373M2")
+    print("<kit>          CY8CPROTO_062_4343W | CY8CKIT_062S2_43012 | CY8CEVAL_062S2_LAI_4373M2 | CY8CEVAL_062S2_MUR_43439M2 |")
     print("<filepath>     The location of the OTA Image file to server to the device")
     print("Defaults: <non-TLS>")
     print("        : -f " + OTA_IMAGE_FILE)
@@ -873,6 +873,8 @@ if __name__ == "__main__":
     print("        : -l turn on extra logging")
     print("################################################################################################################################")
     last_arg = ""
+    OTA_IMAGE_FILE_NEW = None
+    
     for i, arg in enumerate(sys.argv):
         if arg == "-h" or arg == "--help":
             sys.exit()
@@ -882,7 +884,7 @@ if __name__ == "__main__":
             DEBUG_LOG = 1
             DEBUG_LOG_STRING = "1"
         if last_arg == "-f":
-            OTA_IMAGE_FILE = arg
+            OTA_IMAGE_FILE_NEW = arg
         if last_arg == "-b":
             if ((arg == "amazon") | (arg == "a")):
                 BROKER_ADDRESS = AMAZON_BROKER_ADDRESS
@@ -896,9 +898,12 @@ if __name__ == "__main__":
             KIT = arg
         last_arg = arg
 
-print("\n")
+    if OTA_IMAGE_FILE_NEW == None:
+        OTA_IMAGE_FILE = "../build/" + KIT.replace("_","-") + "/Debug/mtb-example-ota-mqtt.bin"
+    else:
+        OTA_IMAGE_FILE = OTA_IMAGE_FILE_NEW
 
-OTA_IMAGE_FILE = "../build/" + KIT.replace("_","-") + "/Debug/mtb-example-anycloud-ota-mqtt.bin"
+print("\n")
 
 if TLS_ENABLED:
     print("   Using TLS")

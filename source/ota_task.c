@@ -4,7 +4,7 @@
 * Description: This file contains task and functions related to OTA operation.
 *
 ********************************************************************************
-* Copyright 2020-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2020-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -55,13 +55,10 @@
 
 /* OTA API */
 #include "cy_ota_api.h"
+#include "ota_serial_flash.h"
 
 /* App specific configuration */
 #include "ota_app_config.h"
-
-#ifdef CY_BOOT_USE_EXTERNAL_FLASH
-#include "cy_smif_psoc6.h"
-#endif
 
 /*******************************************************************************
 * Macros
@@ -145,16 +142,24 @@ void ota_task(void *args)
     /* default for OTA logging to NOTiCE */
     cy_ota_set_log_level(CY_LOG_WARNING);
 
-    /* Validate the update so we do not revert */
-    cy_ota_storage_validated();
+#if defined(OTA_USE_EXTERNAL_FLASH)
+    /* We need to init from every ext flash write
+     * See ota_serial_flash.h
+     */
 
-#ifdef CY_BOOT_USE_EXTERNAL_FLASH
-    if (psoc6_qspi_init() != 0)
+    /* initialize SMIF interface */
+    printf("call ota_smif_initialize()\n");
+    if (ota_smif_initialize() != CY_RSLT_SUCCESS)
     {
-        printf("psoc6_qspi_init() FAILED!!\r\n");
-        CY_ASSERT(0);
+        printf("ERROR returned from ota_smif_initialize()!!!!!\n");
     }
-#endif /* CY_BOOT_USE_EXTERNAL_FLASH */
+#endif /* OTA_USE_EXTERNAL_FLASH */
+
+    /* Validate the update so we do not revert */
+    if(cy_ota_storage_validated() != CY_RSLT_SUCCESS)
+    {
+        printf("\n Failed to validate the update.\n");
+    }
 
     /* Connect to Wi-Fi AP */
     if( connect_to_wifi_ap() != CY_RSLT_SUCCESS )
