@@ -8,26 +8,27 @@ Over-the-air update middleware library enables the OTA feature. See the [ota-upd
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ota-mqtt)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6Inlla3QiLCJEb2MgdmVyc2lvbiI6IjUuMC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJQU09DIn0=)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6Inlla3QiLCJEb2MgdmVyc2lvbiI6IjYuMC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJQU09DIn0=)
 
 ## Requirements
 
-- [ModusToolbox&trade; software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software) v2.4 or later
-- Board support package (BSP) minimum required version: 3.0.0
+- [ModusToolbox&trade; software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software) v3.0 or later (tested with v3.0)
+- Board support package (BSP) minimum required version: 4.0.0
 - Programming language: C
 - Associated parts: All [PSoC&trade; 6 MCU](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller) parts with SDIO interface, [AIROC™ CYW43xxx Wi-Fi & Bluetooth® combo chips](https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos)
 
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
 - GNU Arm® embedded compiler v10.3.1 (`GCC_ARM`) - Default value of `TOOLCHAIN`
-- Arm&reg; compiler v6.13 (`ARM`)
-- IAR C/C++ compiler v8.42.2 (`IAR`)
+- Arm&reg; compiler v6.16 (`ARM`)
+- IAR C/C++ compiler v9.30.1 (`IAR`)
 
 ## Supported kits (make variable 'TARGET')
 
 - [PSoC&trade; 6 Wi-Fi Bluetooth&reg; prototyping kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8cproto-062-4343w) (`CY8CPROTO-062-4343W`) - Default value of `TARGET`
 - [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; pioneer kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-062s2-43012) (`CY8CKIT-062S2-43012`)
 - [PSoC&trade; 62S2 evaluation kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ceval-062s2) (`CY8CEVAL-062S2-LAI-4373M2`, `CY8CEVAL-062S2-MUR-43439M2`)
+- [PSoC&trade; 62S3 Wi-Fi Bluetooth&reg; prototyping kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8cproto-062s3-4343w/) (`CY8CPROTO-062S3-4343W`)
 
 ## Hardware setup
 
@@ -100,10 +101,10 @@ Argument | Description | Required/optional
 
 <br>
 
-The following example will clone the "[mtb-example-ota-mqtt](https://github.com/Infineon/mtb-example-anycloud-ota-mqtt)" application with the desired name "OtaMqtt" configured for the *CY8CPROTO-062-4343W* BSP into the specified working directory, *C:/mtb_projects*:
+The following example will clone the "[mtb-example-ota-mqtt](https://github.com/Infineon/mtb-example-ota-mqtt)" application with the desired name "OtaMqtt" configured for the *CY8CPROTO-062-4343W* BSP into the specified working directory, *C:/mtb_projects*:
 
    ```
-   project-creator-cli --board-id CY8CPROTO-062-4343W --app-id mtb-example-anycloud-ota-mqtt --user-app-name OtaMqtt --target-dir "C:/mtb_projects"
+   project-creator-cli --board-id CY8CPROTO-062-4343W --app-id mtb-example-ota-mqtt --user-app-name OtaMqtt --target-dir "C:/mtb_projects"
    ```
 
 **Note:** The project-creator-cli tool uses the `git clone` and `make getlibs` commands to fetch the repository and import the required libraries. For details, see the "Project creator tools" section of the [ModusToolbox&trade; software user guide](https://www.infineon.com/dgdl/Infineon-ModusToolbox_2.4_User_Guide-Software-v01_00-EN.pdf?fileId=8ac78c8c7e7124d1017ed97e72563632) (locally available at *{ModusToolbox&trade; software install directory}/docs_{version}/mtb_user_guide.pdf*).
@@ -146,7 +147,14 @@ The [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-ps
 
 2. The bootloader and OTA applications must have the same understanding of the memory layout. The memory layout is defined through JSON files. The ota-update library provides a set of predefined JSON files that can be readily used. Both the bootloader and OTA application must use the same JSON file.
 
-   The *\<mtb_shared>/ota-update/\<tag>/configs/flashmap/* folder contains the predefined flashmap JSON files. The files with prefix **psoc62_2m_** are supported by this example.
+   The *\<mtb_shared>/ota-update/\<tag>/configs/flashmap/* folder contains the pre-defined flashmap JSON files. The following files are supported by this example.
+
+   Target      | Supported JSON files
+   ----------- |----------------------------------
+   CY8CPROTO-062-4343W <br> CY8CKIT-062S2-43012 <br> CY8CEVAL-062S2-MUR-43439M2 <br> CY8CEVAL-062S2-LAI-4373M2 | All 4 targets support the following flashmaps - <br> psoc62_2m_ext_overwrite_single.json <br> psoc62_2m_ext_swap_single.json <br> psoc62_2m_int_overwrite_single.json <br> psoc62_2m_int_swap_single.json
+   CY8CPROTO-062S3-4343W | psoc62_512k_xip_swap_single.json
+
+   <br>
 
    Copy the required flashmap JSON file and paste it in the *\<bootloader_cm0p>/flashmap* folder.
 
@@ -289,9 +297,18 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
 2. Open a terminal program and select the KitProg3 COM port. Set the serial port parameters to 8N1 and 115200 baud.
 
-3. Modify the `OTA_FLASH_MAP` variable in the *\<OTA Application>/Makefile* to change the JSON file name to match the selection made while programming the bootloader application.
+3. Modify the `OTA_PLATFORM` variable in the *\<OTA Application>/Makefile* based on the target you have selected. Currently in the Makefile a conditional if-else block is used to automatically select a value based on the target selected. You can remove it and directly assign a value as per the table shown below.
 
-4. Edit the *\<OTA Application>/source/ota_app_config.h* file to configure your OTA application:
+   Target      | `OTA_PLATFORM` value
+   ----------- |----------------------------------
+   CY8CPROTO-062-4343W <br> CY8CKIT-062S2-43012 <br> CY8CEVAL-062S2-MUR-43439M2 <br> CY8CEVAL-062S2-LAI-4373M2 | PSOC_062_2M
+   CY8CPROTO-062S3-4343W | PSOC_062_512K
+
+   <br>
+
+4. Modify the `OTA_FLASH_MAP` variable in the *\<OTA Application>/Makefile* to change the JSON file name to match the selection made while programming the bootloader application. Currently in the Makefile a conditional if-else block is used to automatically select a default flash map file based on the target selected. You can remove it and directly assign the path of the required flash map file to the `OTA_FLASH_MAP` variable.
+
+5. Edit the *\<OTA Application>/source/ota_app_config.h* file to configure your OTA application:
 
    1. Modify the connection configuration such as `WIFI_SSID`, `WIFI_PASSWORD`, and `WIFI_SECURITY` to match the settings of your Wi-Fi network. Ensure that the device running the MQTT broker and the kit are connected to the same network.
 
@@ -319,7 +336,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
          ```
       4. Copy the generated strings and add it to the `ROOT_CA_CERTIFICATE`, `CLIENT_CERTIFICATE` and `CLIENT_KEY` macros per the sample shown.
 
-5. Edit the job document (*\<OTA Application>/scripts/ota_update.json*):
+6. Edit the job document (*\<OTA Application>/scripts/ota_update.json*):
 
    1. Modify the value of `Broker` to match the IP address of your MQTT broker.
 
@@ -327,7 +344,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
    3. In **Step 3**, if the code example has been configured to work in non-TLS mode: Set the value of `Port` to **1883**.
 
-6. Program the board using one of the following:
+7. Program the board using one of the following:
 
    <details><summary><b>Using Eclipse IDE for ModusToolbox&trade; software</b></summary>
 
@@ -355,11 +372,11 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
    ![](images/connection_mqtt_broker.png)
 
-7. The Job document placed in the *\<OTA Application>/scripts/* folder has a value of `Version` as **1.0.0**. Because the OTA application version and the available update version are the same, the update will not happen.
+8. The Job document placed in the *\<OTA Application>/scripts/* folder has a value of `Version` as **1.0.0**. Because the OTA application version and the available update version are the same, the update will not happen.
 
-8. Modify the value of the `BLINKY_DELAY_MS` macro to **(100)** in the *\<OTA Application>/source/led_task.c* file and change the app version in the *\<OTA Application>/Makefile* by setting `APP_VERSION_MINOR` to '1'.
+9. Modify the value of the `BLINKY_DELAY_MS` macro to **(100)** in the *\<OTA Application>/source/led_task.c* file and change the app version in the *\<OTA Application>/Makefile* by setting `APP_VERSION_MINOR` to '1'.
 
-9. Build the app (**DO NOT** program it to the kit). This new image will be published to the MQTT broker in the following steps to demonstrate the OTA update.
+10. Build the app (**DO NOT** program it to the kit). This new image will be published to the MQTT broker in the following steps to demonstrate the OTA update.
 
    </details open><summary><b>Using Eclipse IDE for ModusToolbox&trade; software</b></summary>
 
@@ -380,29 +397,29 @@ This code example uses the locally installable Mosquitto that runs on your compu
          ```
    </details>
 
-10. After a successful build, edit the *\<OTA Application>/scripts/ota_update.json* file to modify the value of `Version` to **1.1.0**.
+11. After a successful build, edit the *\<OTA Application>/scripts/ota_update.json* file to modify the value of `Version` to **1.1.0**.
 
-11. The OTA application now finds the updated Job document, downloads the new image, and places it in the secondary slot. Once the download is complete, a soft reset is issued. The MCUboot bootloader starts the image upgrade process.
+12. The OTA application now finds the updated Job document, downloads the new image, and places it in the secondary slot. Once the download is complete, a soft reset is issued. The MCUboot bootloader starts the image upgrade process.
 
     **Figure 3. Image download**
 
     ![](images/downloading_new_image.png)
 
-12. After the image upgrade is successfully completed, observe that the user LED is now blinking at 10 Hz.
+13. After the image upgrade is successfully completed, observe that the user LED is now blinking at 10 Hz.
 
-13. To test the revert feature of MCUboot, we can send a bad image as v1.2.0 OTA update. The bad image used in this example is an infinite loop. The watchdog timer will reset the bad image and upon reboot, MCUboot will revert the primary image back to v1.1.0 good image. Edit *\<OTA Application>/Makefile* and add `TEST_REVERT` to the `Defines` variable as shown:
+14. To test the revert feature of MCUboot, we can send a bad image as v1.2.0 OTA update. The bad image used in this example is an infinite loop. The watchdog timer will reset the bad image and upon reboot, MCUboot will revert the primary image back to v1.1.0 good image. Edit *\<OTA Application>/Makefile* and add `TEST_REVERT` to the `Defines` variable as shown:
 
       ```
       DEFINES+=CY_RTOS_AWARE HTTP_DO_NOT_USE_CUSTOM_CONFIG TEST_REVERT
       ```
 
-14. Edit the app version in the *\<OTA Application>/Makefile* by setting `APP_VERSION_MINOR` to **2**.
+15. Edit the app version in the *\<OTA Application>/Makefile* by setting `APP_VERSION_MINOR` to **2**.
 
-15. Build the application per **Step 8**.
+16. Build the application per **Step 8**.
 
-16. After a successful build, edit the *\<OTA Application>/scripts/ota_update.json* file to modify the value of `Version` to **1.2.0**.
+17. After a successful build, edit the *\<OTA Application>/scripts/ota_update.json* file to modify the value of `Version` to **1.2.0**.
 
-17. The OTA application will now find this new v1.2.0 image and update to it. After the update, within a few seconds, the watchdog timer resets the devices. Upon reset, MCUboot reverts to the v1.1.0 good image.
+18. The OTA application will now find this new v1.2.0 image and update to it. After the update, within a few seconds, the watchdog timer resets the devices. Upon reset, MCUboot reverts to the v1.1.0 good image.
 
     **Figure 4. Reverting to good image**
 
@@ -503,6 +520,7 @@ Document title: *CE230031* - *Over-the-air firmware update using MQTT*
  3.1.0   | Added support for the kit CY8CEVAL-062S2-LAI-4373M2
  4.0.0   | Updated to support ModusToolbox&trade; software v2.4 and BSP v3.X<br /> Added support for CY8CEVAL-062S2-MUR-43439M2 kit
  5.0.0   | Updated the example to use the new ota-update v1.0.0 library
+ 6.0.0   | Updated the example to use ota-update v1.1.0 library<br /> Updated to support ModusToolbox&trade; software v3.0<br /> Added support for CY8CPROTO-062S3-4343W kit
 
 <br>
 

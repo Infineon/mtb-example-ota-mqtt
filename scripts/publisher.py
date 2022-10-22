@@ -257,7 +257,7 @@ PUBLISHER_PUBLISH_QOS = 1     # AWS broker does not support QOS of 2
 PUBLISHER_SUBSCRIBE_QOS = 1   # AWS broker does not support QOS of 2
 
 # Path to the firmware image
-OTA_IMAGE_FILE = "../build/CY8CPROTO-062-4343W/Debug/mtb-example-ota-mqtt.bin"
+OTA_IMAGE_FILE = "../build/APP_CY8CPROTO-062-4343W/Debug/mtb-example-ota-mqtt.bin"
 
 # Paho MQTT client settings
 MQTT_KEEP_ALIVE = 60 # in seconds
@@ -864,7 +864,7 @@ if __name__ == "__main__":
     print("Infineon Test MQTT Publisher.")
     print("Usage: 'python publisher.py [tls] [-l] [-b <broker>] [-k <kit>] [-f <filepath>]'")
     print("<broker>       | [a] or [amazon] | [e] or [eclipse] | [m] or [mosquitto] | [ml] or [mosquitto_local] |")
-    print("<kit>          CY8CPROTO_062_4343W | CY8CKIT_062S2_43012 | CY8CEVAL_062S2_LAI_4373M2 | CY8CEVAL_062S2_MUR_43439M2 |")
+    print("<kit>          CY8CPROTO_062_4343W | CY8CKIT_062S2_43012 | CY8CEVAL_062S2_LAI_4373M2 | CY8CEVAL_062S2_MUR_43439M2 | CY8CPROTO_062S3_4343W |")
     print("<filepath>     The location of the OTA Image file to server to the device")
     print("Defaults: <non-TLS>")
     print("        : -f " + OTA_IMAGE_FILE)
@@ -899,7 +899,7 @@ if __name__ == "__main__":
         last_arg = arg
 
     if OTA_IMAGE_FILE_NEW == None:
-        OTA_IMAGE_FILE = "../build/" + KIT.replace("_","-") + "/Debug/mtb-example-ota-mqtt.bin"
+        OTA_IMAGE_FILE = "../build/APP_" + KIT.replace("_","-") + "/Debug/mtb-example-ota-mqtt.bin"
     else:
         OTA_IMAGE_FILE = OTA_IMAGE_FILE_NEW
 
@@ -915,10 +915,10 @@ print("   Using   File: " + OTA_IMAGE_FILE)
 print("   extra debug : " + DEBUG_LOG_STRING)
 
 
-PUBLISHER_JOB_REQUEST_TOPIC = COMPANY_TOPIC_PREPEND + "/" + KIT + "/" + PUBLISHER_LISTEN_TOPIC
+PUBLISHER_JOB_REQUEST_TOPIC = COMPANY_TOPIC_PREPEND + "/APP_" + KIT + "/" + PUBLISHER_LISTEN_TOPIC
 print("PUBLISHER_JOB_REQUEST_TOPIC   : " + PUBLISHER_JOB_REQUEST_TOPIC)
 
-PUBLISHER_DIRECT_REQUEST_TOPIC = COMPANY_TOPIC_PREPEND + "/" + KIT + "/" + PUBLISHER_DIRECT_TOPIC
+PUBLISHER_DIRECT_REQUEST_TOPIC = COMPANY_TOPIC_PREPEND + "/APP_" + KIT + "/" + PUBLISHER_DIRECT_TOPIC
 print("PUBLISHER_DIRECT_REQUEST_TOPIC: " + PUBLISHER_DIRECT_REQUEST_TOPIC)
 print("\n")
 
