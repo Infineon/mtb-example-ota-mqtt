@@ -1,34 +1,35 @@
 # Over-the-air firmware update using MQTT
 
-This code example demonstrates an OTA update with PSoC&trade; 6 MCU and AIROC™ CYW43xxx Wi-Fi & Bluetooth® combo chips. The device establishes a connection with the designated MQTT broker (this example uses a local Mosquitto broker). It periodically checks the job document to see if a new update is available. When a new update is available, it is downloaded and written to the secondary slot. On the next reboot, MCUboot swaps the new image in the secondary slot with the primary slot image and runs the application. If the new image is not validated in runtime, on the next reboot MCUboot reverts to the previously validated image.
+This code example demonstrates an over-the air (OTA) update with PSoC&trade; 6 MCU and AIROC&trade; CYW43xxx Wi-Fi & Bluetooth&reg; combo chips. The device establishes a connection with the designated Mosquitto (MQTT) broker (this example uses a local Mosquitto broker). It periodically checks the job document to see if a new update is available. When a new update is available, it is downloaded and written to the secondary slot. On the next reboot, MCUboot swaps the new image in the secondary slot with the primary slot image and runs the application. If the new image is not validated in runtime, on the next reboot, MCUboot reverts to the previously validated image.
 
 MCUboot is a "secure" bootloader for 32-bit MCUs. See the [README](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic/blob/master/README.md) of the [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic) code example for more details.
 
-Over-the-air update middleware library enables the OTA feature. See the [ota-update](https://github.com/Infineon/ota-update) middleware repository on Github for more details.
+OTA update middleware library enables the OTA feature. See the [ota-update](https://github.com/Infineon/ota-update) middleware repository on Github for more details.
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ota-mqtt)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6Inlla3QiLCJEb2MgdmVyc2lvbiI6IjYuMC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJQU09DIn0=)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6InZlbG11cnVnYW4iLCJEb2MgdmVyc2lvbiI6IjYuMS4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJXSUZJIn0=)
 
 ## Requirements
 
-- [ModusToolbox&trade; software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software) v3.0 or later (tested with v3.0)
+- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.0 or later (tested with v3.2)
 - Board support package (BSP) minimum required version: 4.0.0
 - Programming language: C
-- Associated parts: All [PSoC&trade; 6 MCU](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller) parts with SDIO interface, [AIROC™ CYW43xxx Wi-Fi & Bluetooth® combo chips](https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos)
+- Other tools: Python v3.8.10 or later
+- Associated parts: All [PSoC&trade; 6 MCU](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller) parts with SDIO interface, [AIROC&trade; CYW43xxx Wi-Fi & Bluetooth&reg; combo chips](https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos),[AIROC&trade; CYW43022 Wi-Fi & Bluetooth&reg; combo chip](https://www.infineon.com/cms/en/product/wireless-connectivity/airoc-wi-fi-plus-bluetooth-combos/wi-fi-5-802.11ac/cyw43022)
 
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
-- GNU Arm® embedded compiler v10.3.1 (`GCC_ARM`) - Default value of `TOOLCHAIN`
-- Arm&reg; compiler v6.16 (`ARM`)
-- IAR C/C++ compiler v9.30.1 (`IAR`)
+- GNU Arm&reg; Embedded Compiler v11.3.1 (`GCC_ARM`) – Default value of `TOOLCHAIN`
+- Arm&reg; Compiler v6.16 (`ARM`)
+- IAR C/C++ Compiler v9.30.1 (`IAR`)
 
 ## Supported kits (make variable 'TARGET')
 
-- [PSoC&trade; 6 Wi-Fi Bluetooth&reg; prototyping kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8cproto-062-4343w) (`CY8CPROTO-062-4343W`) - Default value of `TARGET`
-- [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; pioneer kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-062s2-43012) (`CY8CKIT-062S2-43012`)
-- [PSoC&trade; 62S2 evaluation kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8ceval-062s2) (`CY8CEVAL-062S2-LAI-4373M2`, `CY8CEVAL-062S2-MUR-43439M2`)
-- [PSoC&trade; 62S3 Wi-Fi Bluetooth&reg; prototyping kit](https://www.infineon.com/cms/en/product/evaluation-boards/cy8cproto-062s3-4343w/) (`CY8CPROTO-062S3-4343W`)
+- [PSoC&trade; 6 Wi-Fi Bluetooth&reg; Prototyping Kit](https://www.infineon.com/CY8CPROTO-062-4343W) (`CY8CPROTO-062-4343W`) – Default value of `TARGET`
+- [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CY8CKIT-062S2-43012) (`CY8CKIT-062S2-43012`)
+- [PSoC&trade; 62S2 Evaluation Kit](https://www.infineon.com/CY8CEVAL-062S2) (`CY8CEVAL-062S2-LAI-4373M2`, `CY8CEVAL-062S2-MUR-43439M2`,`CY8CEVAL-062S2-CYW43022CUB`)
+- [PSoC&trade; 62S3 Wi-Fi Bluetooth&reg; Prototyping Kit](https://www.infineon.com/CY8CPROTO-062S3-4343W) (`CY8CPROTO-062S3-4343W`)
 
 ## Hardware setup
 
@@ -36,9 +37,13 @@ This example uses the board's default configuration. See the kit user guide to e
 
 ## Software setup
 
-Install a terminal emulator if you do not have one. Instructions in this document use [Tera Term](https://ttssh2.osdn.jp/index.html.en).
+See the [ModusToolbox&trade; tools package installation guide](https://www.infineon.com/ModusToolboxInstallguide) for information about installing and configuring the tools package.
 
-This examples uses Mosquitto to setup a local MQTT broker, see section [Setting up the local MQTT Mosquitto broker](#setting-up-the-local-mqtt-mosquitto-broker) for more details.
+1. Install a terminal emulator if you don't have one. Instructions in this document use [Tera Term](https://teratermproject.github.io/index-en.html).
+
+2. This examples uses mosquitto to setup a local MQTT broker, see section [Setting up the local MQTT broker](#setting-up-the-local-mqtt-broker) for more details.
+
+3. Install the Python Interpreter and add it to the top of the system path in environmental variables. This code example is tested with [Python v3.8.10](https://www.python.org/downloads/release/python-3810/).
 
 ## Structure and overview
 
@@ -58,90 +63,108 @@ You must first build and program the MCUboot bootloader project into the CM0+ co
 
 ## Using the code example
 
-Create the project and open it using one of the following:
+### Create the project
 
-<details><summary><b>In Eclipse IDE for ModusToolbox&trade; software</b></summary>
+The ModusToolbox&trade; tools package provides the Project Creator as both a GUI tool and a command line tool.
 
-1. Click the **New Application** link in the **Quick Panel** (or, use **File** > **New** > **ModusToolbox Application**). This launches the [Project Creator](https://www.infineon.com/dgdl/Infineon-ModusToolbox_Project_Creator_Guide_3-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7d718a49017d99bcabbd31e5) tool.
+<details><summary><b>Use Project Creator GUI</b></summary>
 
-2. Pick a kit supported by the code example from the list shown in the **Project Creator - Choose Board Support Package (BSP)** dialog.
+1. Open the Project Creator GUI tool.
 
-   When you select a supported kit, the example is reconfigured automatically to work with the kit. To work with a different supported kit later, use the [Library Manager](https://www.infineon.com/dgdl/Infineon-ModusToolbox_Library_Manager_User_Guide_3-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7d718a49017d99ab34b831ce) to choose the BSP for the supported kit. You can use the Library Manager to select or update the BSP and firmware libraries used in this application. To access the Library Manager, click the link from the **Quick Panel**.
+   There are several ways to do this, including launching it from the dashboard or from inside the Eclipse IDE. For more details, see the [Project Creator user guide](https://www.infineon.com/ModusToolboxProjectCreator) (locally available at *{ModusToolbox&trade; install directory}/tools_{version}/project-creator/docs/project-creator.pdf*).
 
-   You can also just start the application creation process again and select a different kit.
+2. On the **Choose Board Support Package (BSP)** page, select a kit supported by this code example. See [Supported kits](#supported-kits-make-variable-target).
 
-   If you want to use the application for a kit not listed here, you may need to update the source files. If the kit does not have the required resources, the application may not work.
+   > **Note:** To use this code example for a kit not listed here, you may need to update the source files. If the kit does not have the required resources, the application may not work.
 
-3. In the **Project Creator - Select Application** dialog, choose the example by enabling the checkbox.
+3. On the **Select Application** page:
 
-4. (Optional) Change the suggested **New Application Name**.
+   a. Select the **Applications(s) Root Path** and the **Target IDE**.
 
-5. The **Application(s) Root Path** defaults to the Eclipse workspace which is usually the desired location for the application. If you want to store the application in a different location, you can change the *Application(s) Root Path* value. Applications that share libraries should be in the same root path.
+   > **Note:** Depending on how you open the Project Creator tool, these fields may be pre-selected for you.
 
-6. Click **Create** to complete the application creation process.
+   b. Select this code example from the list by enabling its check box.
 
-For more details, see the [Eclipse IDE for ModusToolbox&trade; software user guide](https://www.infineon.com/dgdl/Infineon-Eclipse_IDE_for_ModusToolbox_User_Guide_1-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7d718a49017d99bcb86331e8) (locally available at *{ModusToolbox&trade; software install directory}/ide_{version}/docs/mt_ide_user_guide.pdf*).
+   > **Note:** You can narrow the list of displayed examples by typing in the filter box.
+
+   c. (Optional) Change the suggested **New Application Name** and **New BSP Name**.
+
+   d. Click **Create** to complete the application creation process.
 
 </details>
 
-<details><summary><b>In command-line interface (CLI)</b></summary>
+<details><summary><b>Use Project Creator CLI</b></summary>
 
-ModusToolbox&trade; software provides the Project Creator as both a GUI tool and the command line tool, "project-creator-cli". The CLI tool can be used to create applications from a CLI terminal or from within batch files or shell scripts. This tool is available in the *{ModusToolbox&trade; software install directory}/tools_{version}/project-creator/* directory.
+The 'project-creator-cli' tool can be used to create applications from a CLI terminal or from within batch files or shell scripts. This tool is available in the *{ModusToolbox&trade; install directory}/tools_{version}/project-creator/* directory.
 
-Use a CLI terminal to invoke the "project-creator-cli" tool. On Windows, use the command line "modus-shell" program provided in the ModusToolbox&trade; software installation instead of a standard Windows command-line application. This shell provides access to all ModusToolbox&trade; software tools. You can access it by typing `modus-shell` in the search box in the Windows menu. In Linux and macOS, you can use any terminal application.
+Use a CLI terminal to invoke the 'project-creator-cli' tool. On Windows, use the command-line 'modus-shell' program provided in the ModusToolbox&trade; installation instead of a standard Windows command-line application. This shell provides access to all ModusToolbox&trade; tools. You can access it by typing 'modus-shell' in the search box in the Windows menu. In Linux and macOS, you can use any terminal application.
 
-This tool has the following arguments:
-
-Argument | Description | Required/optional
----------|-------------|-----------
-`--board-id` | Defined in the `<id>` field of the [BSP](https://github.com/Infineon?q=bsp-manifest&type=&language=&sort=) manifest | Required
-`--app-id`   | Defined in the `<id>` field of the [CE](https://github.com/Infineon?q=ce-manifest&type=&language=&sort=) manifest | Required
-`--target-dir`| Specify the directory in which the application is to be created if you prefer not to use the default current working directory | Optional
-`--user-app-name`| Specify the name of the application if you prefer to have a name other than the example's default name | Optional
-
-<br>
-
-The following example will clone the "[mtb-example-ota-mqtt](https://github.com/Infineon/mtb-example-ota-mqtt)" application with the desired name "OtaMqtt" configured for the *CY8CPROTO-062-4343W* BSP into the specified working directory, *C:/mtb_projects*:
+The following example clones the "[mtb-example-ota-mqtt](https://github.com/Infineon/mtb-example-ota-mqtt)" application with the desired name "OtaMqtt" configured for the *CY8CPROTO-062-4343W* BSP into the specified working directory, *C:/mtb_projects*:
 
    ```
    project-creator-cli --board-id CY8CPROTO-062-4343W --app-id mtb-example-ota-mqtt --user-app-name OtaMqtt --target-dir "C:/mtb_projects"
    ```
 
-**Note:** The project-creator-cli tool uses the `git clone` and `make getlibs` commands to fetch the repository and import the required libraries. For details, see the "Project creator tools" section of the [ModusToolbox&trade; software user guide](https://www.infineon.com/dgdl/Infineon-ModusToolbox_2.4_User_Guide-Software-v01_00-EN.pdf?fileId=8ac78c8c7e7124d1017ed97e72563632) (locally available at *{ModusToolbox&trade; software install directory}/docs_{version}/mtb_user_guide.pdf*).
+The 'project-creator-cli' tool has the following arguments:
+
+Argument | Description | Required/optional
+---------|-------------|-----------
+`--board-id` | Defined in the <id> field of the [BSP](https://github.com/Infineon?q=bsp-manifest&type=&language=&sort=) manifest | Required
+`--app-id`   | Defined in the <id> field of the [CE](https://github.com/Infineon?q=ce-manifest&type=&language=&sort=) manifest | Required
+`--target-dir`| Specify the directory in which the application is to be created if you prefer not to use the default current working directory | Optional
+`--user-app-name`| Specify the name of the application if you prefer to have a name other than the example's default name | Optional
+
+> **Note:** The project-creator-cli tool uses the `git clone` and `make getlibs` commands to fetch the repository and import the required libraries. For details, see the "Project creator tools" section of the [ModusToolbox&trade; tools package user guide](https://www.infineon.com/ModusToolboxUserGuide) (locally available at {ModusToolbox&trade; install directory}/docs_{version}/mtb_user_guide.pdf).
 
 </details>
 
-<details><summary><b>In third-party IDEs</b></summary>
+### Open the project
 
-Use one of the following options:
+After the project has been created, you can open it in your preferred development environment.
 
-- **Use the standalone [Project Creator](https://www.infineon.com/dgdl/Infineon-ModusToolbox_Project_Creator_Guide_3-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7d718a49017d99bcabbd31e5) tool:**
+<details><summary><b>Eclipse IDE</b></summary>
 
-   1. Launch Project Creator from the Windows Start menu or from *{ModusToolbox&trade; software install directory}/tools_{version}/project-creator/project-creator.exe*.
+If you opened the Project Creator tool from the included Eclipse IDE, the project will open in Eclipse automatically.
 
-   2. In the initial **Choose Board Support Package** screen, select the BSP, and click **Next**.
+For more details, see the [Eclipse IDE for ModusToolbox&trade; user guide](https://www.infineon.com/MTBEclipseIDEUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_ide_user_guide.pdf*).
 
-   3. In the **Select Application** screen, select the appropriate IDE from the **Target IDE** drop-down menu.
+</details>
 
-   4. Click **Create** and follow the instructions printed in the bottom pane to import or open the exported project in the respective IDE.
+<details><summary><b>Visual Studio (VS) Code</b></summary>
 
-<br>
+Launch VS Code manually, and then open the generated *{project-name}.code-workspace* file located in the project directory.
 
-- **Use command-line interface (CLI):**
+For more details, see the [Visual Studio Code for ModusToolbox&trade; user guide](https://www.infineon.com/MTBVSCodeUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_vscode_user_guide.pdf*).
 
-   1. Follow the instructions from the **In command-line interface (CLI)** section to create the application, and then import the libraries using the `make getlibs` command.
+</details>
 
-   2. Export the application to a supported IDE using the `make <ide>` command.
+<details><summary><b>Keil µVision</b></summary>
 
-   3. Follow the instructions displayed in the terminal to create or import the application as an IDE project.
+Double-click the generated *{project-name}.cprj* file to launch the Keil µVision IDE.
 
-For a list of supported IDEs and more details, see the "Exporting to IDEs" section of the [ModusToolbox&trade; software user guide](https://www.infineon.com/dgdl/Infineon-ModusToolbox_2.4_User_Guide-Software-v01_00-EN.pdf?fileId=8ac78c8c7e7124d1017ed97e72563632) (locally available at *{ModusToolbox&trade; software install directory}/docs_{version}/mtb_user_guide.pdf*).
+For more details, see the [Keil µVision for ModusToolbox&trade; user guide](https://www.infineon.com/MTBuVisionUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_uvision_user_guide.pdf*).
+
+</details>
+
+<details><summary><b>IAR Embedded Workbench</b></summary>
+
+Open IAR Embedded Workbench manually, and create a new project. Then select the generated *{project-name}.ipcf* file located in the project directory.
+
+For more details, see the [IAR Embedded Workbench for ModusToolbox&trade; user guide](https://www.infineon.com/MTBIARUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_iar_user_guide.pdf*).
+
+</details>
+
+<details><summary><b>Command line</b></summary>
+
+If you prefer to use the CLI, open the appropriate terminal, and navigate to the project directory. On Windows, use the command-line 'modus-shell' program; on Linux and macOS, you can use any terminal application. From there, you can run various `make` commands.
+
+For more details, see the [ModusToolbox&trade; tools package user guide](https://www.infineon.com/ModusToolboxUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mtb_user_guide.pdf*).
 
 </details>
 
 ## Building and programming MCUboot
 
-The [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic) code example bundles two applications: the bootloader app that runs on CM0+, and the Blinky app that runs on CM4. For this code example, only the bootloader app is required and the root directory of the bootloader app is referred to as *\<bootloader_cm0p>* in this document.
+The [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic) code example bundles two applications: the bootloader app that runs on CM0+ and the blinky app that runs on CM4. For this code example, only the bootloader app is required and the root directory of the bootloader app is referred to as *\<bootloader_cm0p>* in this document.
 
 1. Import the [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic) code example per the instructions in the [Using the code example](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic#using-the-code-example) section of its [README](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic/blob/master/README.md).
 
@@ -151,7 +174,7 @@ The [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-ps
 
    Target      | Supported JSON files
    ----------- |----------------------------------
-   CY8CPROTO-062-4343W <br> CY8CKIT-062S2-43012 <br> CY8CEVAL-062S2-MUR-43439M2 <br> CY8CEVAL-062S2-LAI-4373M2 | All 4 targets support the following flashmaps - <br> psoc62_2m_ext_overwrite_single.json <br> psoc62_2m_ext_swap_single.json <br> psoc62_2m_int_overwrite_single.json <br> psoc62_2m_int_swap_single.json
+   CY8CPROTO-062-4343W <br> CY8CKIT-062S2-43012 <br> CY8CEVAL-062S2-MUR-43439M2 <br> CY8CEVAL-062S2-LAI-4373M2 | All 4 targets support the following flashmaps: <br> psoc62_2m_ext_overwrite_single.json <br> psoc62_2m_ext_swap_single.json <br> psoc62_2m_int_overwrite_single.json <br> psoc62_2m_int_swap_single.json
    CY8CPROTO-062S3-4343W | psoc62_512k_xip_swap_single.json
 
    <br>
@@ -160,7 +183,7 @@ The [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-ps
 
 3. Modify the value of the `FLASH_MAP` variable in  *\<bootloader_cm0p>/shared_config.mk* to the selected JSON file name from the previous step.
 
-4. Copy the *\<mtb_shared>/mcuboot/\<tag>/boot/cypress/MCUBootApp/config* folder and paste it in the *\<bootloader_cm0p>* folder. 
+4. Copy the *\<mtb_shared>/mcuboot/\<tag>/boot/cypress/MCUBootApp/config* folder and paste it in the *\<bootloader_cm0p>* folder.
 
 5. Edit the *\<bootloader_cm0p>/config/mcuboot_config/mcuboot_config.h* file and comment out the following defines to skip checking the image signature:
 
@@ -178,11 +201,11 @@ The [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-ps
 
 8. Open a CLI terminal.
 
-   On Linux and macOS, you can use any terminal application. On Windows, open the **modus-shell** app from the Start menu.
+   On Linux and macOS, you can use any terminal application. On Windows, open the 'modus-shell' app from the Start menu.
 
 9. Navigate the terminal to the *\<mtb_shared>/mcuboot/\<tag>/scripts* folder.
 
-10. Run the following command to ensure that the required modules are installed or already present ("Requirement already satisfied:" is printed).
+10. Run the following command to ensure that the required modules are installed.
 
       ```
       pip install -r requirements.txt
@@ -198,28 +221,27 @@ The [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-ps
 
     ![](images/booting_without_bootable_image.png)
 
-**Note:** This example does not demonstrate securely upgrading the image and booting from it using features such as image-signing and secured boot. See the [PSoC&trade; 64 line of "Secure" MCUs](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/psoc-6-32-bit-arm-cortex-m4-mcu/psoc-64) that offer all those features built around MCUboot.
+    > **Note:** This example does not demonstrate securely upgrading the image and booting from it using features such as image-signing and secured boot. See the [PSoC&trade; 64 line of "Secure" MCUs](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/psoc-6-32-bit-arm-cortex-m4-mcu/psoc-64) that offer all those features built around MCUboot.
 
-## Setting up the local MQTT Mosquitto broker
+## Setting up the local MQTT broker
 
 The root directory of the OTA application is referred to as *\<OTA Application>* in this document.
 
-This code example uses the locally installable Mosquitto that runs on your computer as the default broker. You can also use one of the other public MQTT brokers listed at [https://github.com/mqtt/mqtt.github.io/wiki/public_brokers](https://github.com/mqtt/mqtt.github.io/wiki/public_brokers).
+This code example uses the locally installable mosquitto that runs on your computer as the default broker. You can also use one of the other public MQTT brokers listed at [https://github.com/mqtt/mqtt.github.io/wiki/public_brokers](https://github.com/mqtt/mqtt.github.io/wiki/public_brokers).
 
 1. Download the executable setup from [Mosquitto downloads](https://mosquitto.org/download/) site.
 
 2. Run the setup to install the software. During installation, uncheck the **Service** component. Also, note down the installation directory.
 
-3. Once the installation is complete, add the installation directory to the system **PATH**.
+3. Once the installation is complete, add the installation directory to the system **Path**.
 
 4. Open a CLI terminal.
 
-   On Linux and macOS, you can use any terminal application. On Windows, open the **modus-shell** app from the Start menu.
+   On Linux and macOS, you can use any terminal application. On Windows, open the 'modus-shell' app from the Start menu.
 
 5. Navigate to the *\<OTA Application>/scripts/* folder.
 
 6. Execute the following command to generate self-signed SSL certificates and keys. On Linux and macOS, you can get your device local IP address by running the `ifconfig` command on any terminal application. On Windows, run the `ipconfig` command on a command prompt.
-
 
    ```
    sh generate_ssl_cert.sh <local-ip-address-of-your-pc>
@@ -241,7 +263,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
 7. The *\<OTA Application>/scripts/mosquitto.conf* file is preconfigured for starting the Mosquitto server for this code example. You can edit the file if you wish to make other changes to the broker settings.
 
-8. Starting the Mosquitto MQTT server:
+8. Starting the MQTT server:
 
    - **Using the code example in TLS mode (default):**
 
@@ -250,7 +272,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
          ```
          mosquitto -v -c mosquitto.conf
          ```
-   
+
    - **Using the code example in Non-TLS mode:**
 
       1. Edit the *\<OTA Application>/scripts/mosquitto.conf* file and change the value of `require_certificate` parameter to **false**.
@@ -265,22 +287,21 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
 1. Open a CLI terminal.
 
-   On Linux and macOS, you can use any terminal application. On Windows, open the **modus-shell** app from the Start menu.
-
 2. Navigate to the *\<OTA Application>/scripts/* folder.
 
-3. Run the following command to ensure that the required Python modules are installed or already present ("Requirement already satisfied:" is printed).
+3. Run the following command to ensure that the required Python modules are installed.
 
       ```
       pip install -r requirements.txt
       ```
 
+
 4. Edit the *\<OTA Application>/scripts/publisher.py* file and change the value of the variable `MOSQUITTO_BROKER_LOCAL_ADDRESS` to the local IP address of your PC.
 
-5. Run the *publisher.py* python script.
+5. Run the *publisher.py* Python script.
 
    The scripts take arguments such as kit name, broker URL, and file path. For details on the supported arguments and their usage, execute the following command:
-
+   > **Note:** For Linux and macOS platforms, please use python3 instead of python in the below command.
    ```
    python publisher.py --help
    ```
@@ -297,7 +318,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
 2. Open a terminal program and select the KitProg3 COM port. Set the serial port parameters to 8N1 and 115200 baud.
 
-3. Modify the `OTA_PLATFORM` variable in the *\<OTA Application>/Makefile* based on the target you have selected. Currently in the Makefile a conditional if-else block is used to automatically select a value based on the target selected. You can remove it and directly assign a value as per the table shown below.
+3. Modify the `OTA_PLATFORM` variable in the *\<OTA Application>/Makefile* based on the target you have selected. Currently in the Makefile a conditional if-else block is used to automatically select a value based on the target selected. You can remove it and directly assign a value as shown below.
 
    Target      | `OTA_PLATFORM` value
    ----------- |----------------------------------
@@ -320,33 +341,35 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
       1. Open a CLI terminal.
 
-          On Linux and macOS, you can use any terminal application. On Windows, open the **modus-shell** app from the Start menu.
+         On Linux and macOS, you can use any terminal application. On Windows, open the 'modus-shell' app from the Start menu.
 
       2. Navigate the terminal to *\<OTA Application>/scripts/* directory.
 
       3. Run the *format_cert_key.py* Python script to generate the string format of the certificate and key files that can be added as a macro. Pass the name of the certificate or key with the extension as an argument to the Python script:
+         > **Note:** For Linux and macOS platforms, please use python3 instead of python in the below command.
 
          ```
          python format_cert_key.py <one-or-more-file-name-of-certificate-or-key-with-extension>
          ```
-         
-         Example:
+
+          For example:
          ```
          python format_cert_key.py mosquitto_ca.crt mosquitto_client.crt mosquitto_client.key
          ```
+
       4. Copy the generated strings and add it to the `ROOT_CA_CERTIFICATE`, `CLIENT_CERTIFICATE` and `CLIENT_KEY` macros per the sample shown.
 
 6. Edit the job document (*\<OTA Application>/scripts/ota_update.json*):
 
    1. Modify the value of `Broker` to match the IP address of your MQTT broker.
 
-   2. Modify the value of `Board` to match the kit you are using.
+   2. Modify the value of `Board` to match the kit you are using. (make sure to use "_" instead of "-" while giving Board name)
 
    3. In **Step 3**, if the code example has been configured to work in non-TLS mode: Set the value of `Port` to **1883**.
 
 7. Program the board using one of the following:
 
-   <details><summary><b>Using Eclipse IDE for ModusToolbox&trade; software</b></summary>
+   <details><summary><b>Using Eclipse IDE for ModusToolbox&trade;</b></summary>
 
       1. Select the application project in the Project Explorer.
 
@@ -360,7 +383,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
       make program TARGET=<BSP> TOOLCHAIN=<toolchain>
       ```
 
-      Example:
+      For Example:
       ```
       make program TARGET=CY8CPROTO-062-4343W TOOLCHAIN=GCC_ARM
       ```
@@ -372,13 +395,13 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
    ![](images/connection_mqtt_broker.png)
 
-8. The Job document placed in the *\<OTA Application>/scripts/* folder has a value of `Version` as **1.0.0**. Because the OTA application version and the available update version are the same, the update will not happen.
+8. The job document placed in the *\<OTA Application>/scripts/* folder has a value of `Version` as **1.0.0**. Because the OTA application version and the available update version are the same, the update will not happen.
 
-9. Modify the value of the `BLINKY_DELAY_MS` macro to **(100)** in the *\<OTA Application>/source/led_task.c* file and change the app version in the *\<OTA Application>/Makefile* by setting `APP_VERSION_MINOR` to '1'.
+9. Modify the value of the `BLINKY_DELAY_MS` macro to **(100)** in the *\<OTA Application>/source/led_task.c* file and change the app version in the *\<OTA Application>/Makefile* by setting `APP_VERSION_MINOR` to **1**.
 
 10. Build the app (**DO NOT** program it to the kit). This new image will be published to the MQTT broker in the following steps to demonstrate the OTA update.
 
-   </details open><summary><b>Using Eclipse IDE for ModusToolbox&trade; software</b></summary>
+   </details open><summary><b>Using Eclipse IDE for ModusToolbox&trade;</b></summary>
 
       1. Select the application project in the Project Explorer.
 
@@ -391,7 +414,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
          ```
          make build TARGET=<BSP> TOOLCHAIN=<toolchain>
          ```
-         Example:
+         For example:
          ```
          make build TARGET=CY8CPROTO-062-4343W TOOLCHAIN=GCC_ARM
          ```
@@ -399,7 +422,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
 11. After a successful build, edit the *\<OTA Application>/scripts/ota_update.json* file to modify the value of `Version` to **1.1.0**.
 
-12. The OTA application now finds the updated Job document, downloads the new image, and places it in the secondary slot. Once the download is complete, a soft reset is issued. The MCUboot bootloader starts the image upgrade process.
+12. The OTA application now finds the updated job document, downloads the new image, and places it in the secondary slot. Once the download is complete, a soft reset is issued. The MCUboot bootloader starts the image upgrade process.
 
     **Figure 3. Image download**
 
@@ -419,19 +442,19 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
 17. After a successful build, edit the *\<OTA Application>/scripts/ota_update.json* file to modify the value of `Version` to **1.2.0**.
 
-18. The OTA application will now find this new v1.2.0 image and update to it. After the update, within a few seconds, the watchdog timer resets the devices. Upon reset, MCUboot reverts to the v1.1.0 good image.
+18. The OTA application will now find this new v1.2.0 image and update to it. After the update, within a few seconds, the watchdog timer resets the devices. Upon reset, MCUboot reverts to the v1.1.0 good image as shown in **Figure 4**.
 
     **Figure 4. Reverting to good image**
 
     ![](images/reverting_to_good_image.png)
 
-**Note:** After completing the last step, the device will be running the v1.1.0 good image and the publisher will still be hosting the v1.2.0 bad image. Since the version of the image hosted by the publisher is greater than the version of the image on the device, the device redownloads the v1.2.0 bad image. This causes an infinite upgrade and revert cycle. To avoid this scenario, stop the publisher script after you test the code example. In a production environment, the application is responsible for blacklisting bad image versions and avoid upgrading to them in the future.
+> **Note:** After completing the last step, the device will be running the v1.1.0 good image and the publisher will still be hosting the v1.2.0 bad image. Since the version of the image hosted by the publisher is greater than the version of the image on the device, the device redownloads the v1.2.0 bad image. This causes an infinite upgrade and revert cycle. To avoid this scenario, stop the publisher script after you test the code example. In a production environment, the application is responsible for blacklisting bad image versions and avoid upgrading to them in the future.
 
 ## Debugging
 
-You can debug the example to step through the code. In the IDE, use the **\<OTA Application> Debug (KitProg3_MiniProg4)** configuration in the **Quick Panel**. For more details, see the "Program and debug" section in the [Eclipse IDE for ModusToolbox&trade; user guide](https://www.infineon.com/dgdl/Infineon-Eclipse_IDE_for_ModusToolbox_User_Guide_1-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7d718a49017d99bcb86331e8).
+You can debug the example to step through the code. In the IDE, use the **\<OTA Application> Debug (KitProg3_MiniProg4)** configuration in the **Quick Panel**. For details, see the "Program and debug" section in the [Eclipse IDE for ModusToolbox&trade; user guide](https://www.infineon.com/MTBEclipseIDEUserGuide).
 
-**Note:** **(Only while debugging)** On the CM4 CPU, some code in `main()` may execute before the debugger halts at the beginning of `main()`. This means that some codes execute twice - once before the debugger stops execution, and again after the debugger resets the program counter to the beginning of `main()`. See [KBA231071](https://community.infineon.com/t5/Knowledge-Base-Articles/PSoC-6-MCU-Code-in-main-executes-before-the-debugger-halts-at-the-first-line-of/ta-p/253856) to learn about this and for the workaround.
+> **Note:** **(Only while debugging)** On the CM4 CPU, some code in `main()` may execute before the debugger halts at the beginning of `main()`. This means that some code executes twice – once before the debugger stops execution, and again after the debugger resets the program counter to the beginning of `main()`. See [KBA231071](https://community.infineon.com/t5/Knowledge-Base-Articles/PSoC-6-MCU-Code-in-main-executes-before-the-debugger-halts-at-the-first-line-of/ta-p/253856) to learn about this and for the workaround.
 
 ## Design and implementation
 
@@ -461,26 +484,25 @@ All the scripts and configurations needed for this example are placed under the 
 
 The *\<OTA Application>/configs/* folder contains other configurations related to the OTA middleware, FreeRTOS, and MBEDTLS.
 
-**Figure 4** shows the flow of the OTA update process using MQTT. The application which needs OTA updates should run the OTA agent. The OTA agent spawns threads to receive OTA updates when available, without intervening with the application's core functionality.
+**Figure 5** shows the flow of the OTA update process using MQTT. The application which needs OTA updates should run the OTA agent. The OTA agent spawns threads to receive OTA updates when available, without intervening with the application's core functionality.
 
 The initial application resides in the primary slot of the flash memory. When the OTA agent receives an update, the new image is placed in the secondary slot of the flash memory. On the next reboot, MCUboot copies the image from the secondary slot into the primary slot and then CM4 will boot the upgraded image from the primary slot.
 
-**Figure 4. Overview of OTA update using MQTT**
+**Figure 5. Overview of OTA update using MQTT**
 
 ![](images/ota_mqtt_update_flow.png)
 
 For more details on the features and configurations offered by the [ota-update](https://github.com/Infineon/ota-update) library, see its [README](https://github.com/Infineon/ota-update/blob/master/README.md).
 
-Both MCUboot and the application must have an identical understanding of the memory layout. Otherwise, the bootloader may consider an authentic image as invalid. For more details on the features and configurations of MCUboot-based bootloader, see the [README](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic/blob/master/README.md) of the [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic) code example.
+Both MCUboot and the application must have an identical understanding of the memory layout, otherwise, the bootloader may consider an authentic image as invalid. For more details on the features and configurations of MCUboot-based bootloader, see the [README](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic/blob/master/README.md) of the [mtb-example-psoc6-mcuboot-basic](https://github.com/Infineon/mtb-example-psoc6-mcuboot-basic) code example.
 
 ### Resources and settings
-
 
 **Table 1. Application resources**
 
  Resource  |  Alias/object     |    Purpose
- :------- | :------------    | :------------
- UART (HAL)|cy_retarget_io_uart_obj| UART HAL object used by retarget-io for the debug UART port
+ :-------- | :-------------    | :------------
+ UART (HAL)|cy_retarget_io_uart_obj| UART HAL object used by Retarget-IO for the Debug UART port
  GPIO (HAL)| CYBSP_USER_LED    | User LED
 
 <br>
@@ -488,45 +510,50 @@ Both MCUboot and the application must have an identical understanding of the mem
 ## Related resources
 
 Resources | Links
-----------|----------
-Application notes  | [AN228571](https://www.infineon.com/dgdl/Infineon-AN228571_Getting_started_with_PSoC_6_MCU_on_ModusToolbox_software-ApplicationNotes-v06_00-EN.pdf?fileId=8ac78c8c7cdc391c017d0d36de1f66d1) – Getting started with PSoC&trade; 6 MCU on ModusToolbox&trade; software <br>  [AN215656](https://www.infineon.com/dgdl/Infineon-AN215656_PSoC_6_MCU_Dual-CPU_System_Design-ApplicationNotes-v09_00-EN.pdf?fileId=8ac78c8c7cdc391c017d0d3180c4655f) – PSoC&trade; 6 MCU: Dual-CPU system design
-Code examples  | [Using ModusToolbox&trade; software](https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software) on GitHub
+-----------|----------------------------------
+Application notes  | [AN228571](https://www.infineon.com/AN228571) – Getting started with PSoC&trade; 6 MCU on ModusToolbox&trade; <br>  [AN215656](https://www.infineon.com/AN215656) – PSoC&trade; 6 MCU: Dual-CPU system design <br>
+Code examples  | [Using ModusToolbox&trade;](https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software) on GitHub
 Device documentation | [PSoC&trade; 6 MCU datasheets](https://documentation.infineon.com/html/psoc6/bnm1651211483724.html) <br> [PSoC&trade; 6 technical reference manuals](https://documentation.infineon.com/html/psoc6/zrs1651212645947.html)
-Development kits | Select your kits from the [evaluation board finder](https://www.infineon.com/cms/en/design-support/finder-selection-tools/product-finder/evaluation-board) and use the options in the **Select your kit** section to filter kits by *Product family* or *Features*.
-Libraries on GitHub  | [mtb-pdl-cat1](https://github.com/Infineon/mtb-pdl-cat1) – PSoC&trade; 6 peripheral driver library (PDL)  <br> [mtb-hal-cat1](https://github.com/Infineon/mtb-hal-cat1) – Hardware abstraction layer (HAL) library <br> [retarget-io](https://github.com/Infineon/retarget-io) – Utility library to retarget STDIO messages to a UART port
-Middleware on GitHub  | [ota-update](https://github.com/Infineon/ota-update) – OTA library and docs <br> [wifi-mw-core](https://github.com/Infineon/wifi-mw-core) – Wi-Fi middleware core library and docs <br> [psoc6-middleware](https://github.com/Infineon/modustoolbox-software#psoc-6-middleware-libraries) – Links to all PSoC&trade; 6 MCU middleware
-Tools  | [Eclipse IDE for ModusToolbox&trade; software](https://www.infineon.com/cms/en/design-support/tools/sdk/modustoolbox-software) – ModusToolbox&trade; software is a collection of easy-to-use software and tools enabling rapid development with Infineon MCUs, covering applications from embedded sense and control to wireless and cloud-connected systems using AIROC&trade; Wi-Fi and Bluetooth® connectivity devices.
+Development kits | Select your kits from the [Evaluation board finder](https://www.infineon.com/cms/en/design-support/finder-selection-tools/product-finder/evaluation-board)
+Libraries on GitHub  | [mtb-pdl-cat1](https://github.com/Infineon/mtb-pdl-cat1) – PSoC&trade; 6 Peripheral Driver Library (PDL)  <br> [mtb-hal-cat1](https://github.com/Infineon/mtb-hal-cat1) – Hardware Abstraction Layer (HAL) library <br> [retarget-io](https://github.com/Infineon/retarget-io) – Utility library to retarget STDIO messages to a UART port 
+Middleware on GitHub  | [capsense](https://github.com/Infineon/capsense) – CAPSENSE&trade; library and documents <br> [psoc6-middleware](https://github.com/Infineon/modustoolbox-software#psoc-6-middleware-libraries) – Links to all PSoC&trade; 6 MCU middleware
+Tools  | [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) – ModusToolbox&trade; software is a collection of easy-to-use libraries and tools enabling rapid development with Infineon MCUs for applications ranging from wireless and cloud-connected systems, edge AI/ML, embedded sense and control, to wired USB connectivity using PSoC&trade; Industrial/IoT MCUs, AIROC&trade; Wi-Fi and Bluetooth&reg; connectivity devices, XMC&trade; Industrial MCUs, and EZ-USB&trade;/EZ-PD&trade; wired connectivity controllers. ModusToolbox&trade; incorporates a comprehensive set of BSPs, HAL, libraries, configuration tools, and provides support for industry-standard IDEs to fast-track your embedded application development.
+
+<br>
 
 ## Other resources
 
-Infineon provides a wealth of data at www.infineon.com to help you select the right device, and quickly and effectively integrate it into your design.
-
-For PSoC&trade; 6 MCU devices, see [How to design with PSoC&trade; 6 MCU - KBA223067](https://community.infineon.com/t5/Knowledge-Base-Articles/How-to-Design-with-PSoC-6-MCU-KBA223067/ta-p/248857) in the Infineon community.
-
+Infineon provides a wealth of data at [www.infineon.com](https://www.infineon.com) to help you select the right device, and quickly and effectively integrate it into your design.
 
 ## Document history
 
-Document title: *CE230031* - *Over-the-air firmware update using MQTT*
+Document title: *CE230031* – *Over-the-air firmware update using MQTT*
 
  Version | Description of change
  ------- | ---------------------
  1.0.0   | New code example
  1.1.0   | Minor Makefile updates to sync with BSP changes
  1.2.0   | Updated the *.cyignore* file to support new build system changes
- 2.0.0   | Updated to support OTA v2.x and ModusToolbox&trade; software v2.2 <br> This version is not backward compatible with ModusToolbox&trade; software v2.1
+ 2.0.0   | Updated to support OTA v2.x and ModusToolbox&trade; v2.2 <br> This version is not backward compatible with ModusToolbox&trade; v2.1
  2.1.0   | Minor update to README - Added steps to install required Python modules
  2.2.0   | Updated the configuration file to support MbedTLS v2.22.0
  3.0.0   | Update to:<br>1. Support ota v4.X library <br>2. Use locally installed Mosquitto broker <br>3. Support swap upgrade with MCUboot
  3.1.0   | Added support for the kit CY8CEVAL-062S2-LAI-4373M2
- 4.0.0   | Updated to support ModusToolbox&trade; software v2.4 and BSP v3.X<br /> Added support for CY8CEVAL-062S2-MUR-43439M2 kit
+ 4.0.0   | Updated to support ModusToolbox&trade; v2.4 and BSP v3.X<br /> Added support for CY8CEVAL-062S2-MUR-43439M2 kit
  5.0.0   | Updated the example to use the new ota-update v1.0.0 library
- 6.0.0   | Updated the example to use ota-update v1.1.0 library<br /> Updated to support ModusToolbox&trade; software v3.0<br /> Added support for CY8CPROTO-062S3-4343W kit
-
+ 6.0.0   | Updated the example to use ota-update v1.1.0 library<br /> Updated to support ModusToolbox&trade; v3.0<br /> Added support for CY8CPROTO-062S3-4343W kit
+ 6.1.0   | Added support for CY8CEVAL-062S2-CYW43022CUB <br> Updated to support ModusToolbox&trade; v3.2
+ 
 <br>
 
-----------
-© Cypress Semiconductor Corporation, 2020-2022. This document is the property of Cypress Semiconductor Corporation, an Infineon Technologies company, and its affiliates ("Cypress").  This document, including any software or firmware included or referenced in this document ("Software"), is owned by Cypress under the intellectual property laws and treaties of the United States and other countries worldwide.  Cypress reserves all rights under such laws and treaties and does not, except as specifically stated in this paragraph, grant any license under its patents, copyrights, trademarks, or other intellectual property rights.  If the Software is not accompanied by a license agreement and you do not otherwise have a written agreement with Cypress governing the use of the Software, then Cypress hereby grants you a personal, non-exclusive, nontransferable license (without the right to sublicense) (1) under its copyright rights in the Software (a) for Software provided in source code form, to modify and reproduce the Software solely for use with Cypress hardware products, only internally within your organization, and (b) to distribute the Software in binary code form externally to end users (either directly or indirectly through resellers and distributors), solely for use on Cypress hardware product units, and (2) under those claims of Cypress’s patents that are infringed by the Software (as provided by Cypress, unmodified) to make, use, distribute, and import the Software solely for use with Cypress hardware products.  Any other use, reproduction, modification, translation, or compilation of the Software is prohibited.
+All referenced product or service names and trademarks are the property of their respective owners.
+
+The Bluetooth&reg; word mark and logos are registered trademarks owned by Bluetooth SIG, Inc., and any use of such marks by Infineon is under license.
+
+---------------------------------------------------------
+
+© Cypress Semiconductor Corporation, 2020-2024. This document is the property of Cypress Semiconductor Corporation, an Infineon Technologies company, and its affiliates ("Cypress").  This document, including any software or firmware included or referenced in this document ("Software"), is owned by Cypress under the intellectual property laws and treaties of the United States and other countries worldwide.  Cypress reserves all rights under such laws and treaties and does not, except as specifically stated in this paragraph, grant any license under its patents, copyrights, trademarks, or other intellectual property rights.  If the Software is not accompanied by a license agreement and you do not otherwise have a written agreement with Cypress governing the use of the Software, then Cypress hereby grants you a personal, non-exclusive, nontransferable license (without the right to sublicense) (1) under its copyright rights in the Software (a) for Software provided in source code form, to modify and reproduce the Software solely for use with Cypress hardware products, only internally within your organization, and (b) to distribute the Software in binary code form externally to end users (either directly or indirectly through resellers and distributors), solely for use on Cypress hardware product units, and (2) under those claims of Cypress's patents that are infringed by the Software (as provided by Cypress, unmodified) to make, use, distribute, and import the Software solely for use with Cypress hardware products.  Any other use, reproduction, modification, translation, or compilation of the Software is prohibited.
 <br>
-TO THE EXTENT PERMITTED BY APPLICABLE LAW, CYPRESS MAKES NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, WITH REGARD TO THIS DOCUMENT OR ANY SOFTWARE OR ACCOMPANYING HARDWARE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  No computing device can be absolutely secure.  Therefore, despite security measures implemented in Cypress hardware or software products, Cypress shall have no liability arising out of any security breach, such as unauthorized access to or use of a Cypress product. CYPRESS DOES NOT REPRESENT, WARRANT, OR GUARANTEE THAT CYPRESS PRODUCTS, OR SYSTEMS CREATED USING CYPRESS PRODUCTS, WILL BE FREE FROM CORRUPTION, ATTACK, VIRUSES, INTERFERENCE, HACKING, DATA LOSS OR THEFT, OR OTHER SECURITY INTRUSION (collectively, "Security Breach").  Cypress disclaims any liability relating to any Security Breach, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any Security Breach.  In addition, the products described in these materials may contain design defects or errors known as errata which may cause the product to deviate from published specifications. To the extent permitted by applicable law, Cypress reserves the right to make changes to this document without further notice. Cypress does not assume any liability arising out of the application or use of any product or circuit described in this document. Any information provided in this document, including any sample design information or programming code, is provided only for reference purposes.  It is the responsibility of the user of this document to properly design, program, and test the functionality and safety of any application made of this information and any resulting product.  "High-Risk Device" means any device or system whose failure could cause personal injury, death, or property damage.  Examples of High-Risk Devices are weapons, nuclear installations, surgical implants, and other medical devices.  "Critical Component" means any component of a High-Risk Device whose failure to perform can be reasonably expected to cause, directly or indirectly, the failure of the High-Risk Device, or to affect its safety or effectiveness.  Cypress is not liable, in whole or in part, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any use of a Cypress product as a Critical Component in a High-Risk Device. You shall indemnify and hold Cypress, including its affiliates, and its directors, officers, employees, agents, distributors, and assigns harmless from and against all claims, costs, damages, and expenses, arising out of any claim, including claims for product liability, personal injury or death, or property damage arising from any use of a Cypress product as a Critical Component in a High-Risk Device. Cypress products are not intended or authorized for use as a Critical Component in any High-Risk Device except to the limited extent that (i) Cypress’s published data sheet for the product explicitly states Cypress has qualified the product for use in a specific High-Risk Device, or (ii) Cypress has given you advance written authorization to use the product as a Critical Component in the specific High-Risk Device and you have signed a separate indemnification agreement.
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, CYPRESS MAKES NO WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, WITH REGARD TO THIS DOCUMENT OR ANY SOFTWARE OR ACCOMPANYING HARDWARE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  No computing device can be absolutely secure.  Therefore, despite security measures implemented in Cypress hardware or software products, Cypress shall have no liability arising out of any security breach, such as unauthorized access to or use of a Cypress product. CYPRESS DOES NOT REPRESENT, WARRANT, OR GUARANTEE THAT CYPRESS PRODUCTS, OR SYSTEMS CREATED USING CYPRESS PRODUCTS, WILL BE FREE FROM CORRUPTION, ATTACK, VIRUSES, INTERFERENCE, HACKING, DATA LOSS OR THEFT, OR OTHER SECURITY INTRUSION (collectively, "Security Breach").  Cypress disclaims any liability relating to any Security Breach, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any Security Breach.  In addition, the products described in these materials may contain design defects or errors known as errata which may cause the product to deviate from published specifications. To the extent permitted by applicable law, Cypress reserves the right to make changes to this document without further notice. Cypress does not assume any liability arising out of the application or use of any product or circuit described in this document. Any information provided in this document, including any sample design information or programming code, is provided only for reference purposes.  It is the responsibility of the user of this document to properly design, program, and test the functionality and safety of any application made of this information and any resulting product.  "High-Risk Device" means any device or system whose failure could cause personal injury, death, or property damage.  Examples of High-Risk Devices are weapons, nuclear installations, surgical implants, and other medical devices.  "Critical Component" means any component of a High-Risk Device whose failure to perform can be reasonably expected to cause, directly or indirectly, the failure of the High-Risk Device, or to affect its safety or effectiveness.  Cypress is not liable, in whole or in part, and you shall and hereby do release Cypress from any claim, damage, or other liability arising from any use of a Cypress product as a Critical Component in a High-Risk Device. You shall indemnify and hold Cypress, including its affiliates, and its directors, officers, employees, agents, distributors, and assigns harmless from and against all claims, costs, damages, and expenses, arising out of any claim, including claims for product liability, personal injury or death, or property damage arising from any use of a Cypress product as a Critical Component in a High-Risk Device. Cypress products are not intended or authorized for use as a Critical Component in any High-Risk Device except to the limited extent that (i) Cypress's published data sheet for the product explicitly states Cypress has qualified the product for use in a specific High-Risk Device, or (ii) Cypress has given you advance written authorization to use the product as a Critical Component in the specific High-Risk Device and you have signed a separate indemnification agreement.
 <br>
-Cypress, the Cypress logo, and combinations thereof, WICED, ModusToolbox, PSoC, CapSense, EZ-USB, F-RAM, and Traveo are trademarks or registered trademarks of Cypress or a subsidiary of Cypress in the United States or in other countries. For a more complete list of Cypress trademarks, visit cypress.com. Other names and brands may be claimed as property of their respective owners.
+Cypress, the Cypress logo, and combinations thereof, ModusToolbox, PSoC, CAPSENSE, EZ-USB, F-RAM, and TRAVEO are trademarks or registered trademarks of Cypress or a subsidiary of Cypress in the United States or in other countries. For a more complete list of Cypress trademarks, visit [www.infineon.com](https://www.infineon.com). Other names and brands may be claimed as property of their respective owners.
