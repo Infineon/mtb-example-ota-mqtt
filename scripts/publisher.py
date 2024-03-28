@@ -193,7 +193,13 @@ DEBUG_LOG_STRING = "0"
 # Defines
 #==============================================================================
 
-KIT = "CY8CPROTO_062_4343W"
+# Board or Target name
+BOARD = "APP_CY8CPROTO_062S2_43439"
+
+print("BOARD:",BOARD)
+
+# Kit or Device name
+KIT = BOARD.replace("APP_","")
 
 SEND_IMAGE_MQTT_CLIENT_ID = "OTASend"
 
@@ -236,7 +242,7 @@ JSON_JOB_MESSAGE_FILE = "ota_update.json"
 # Mosquitto works sometimes - it is a test server for the Mosquitto project
 #
 # Set the Broker using command line arguments "-b amazon"
-AMAZON_BROKER_ADDRESS = "xxxxxxxxx-ats.iot.us-west-1.amazonaws.com"
+AMAZON_BROKER_ADDRESS = "xxxxxxxxx-ats.iot.us-west-1.amazonaws.com"       # E.g : "b9m07l8775v3ky-ats.iot.us-west-2.amazonaws.com"
 
 # Set the Broker using command line arguments "-b eclipse"
 ECLIPSE_BROKER_ADDRESS = "mqtt.eclipse.org"
@@ -245,19 +251,19 @@ ECLIPSE_BROKER_ADDRESS = "mqtt.eclipse.org"
 MOSQUITTO_BROKER_ADDRESS = "test.mosquitto.org"
 
 # Set the Broker using command line arguments "-b mosquitto_local"
-MOSQUITTO_BROKER_LOCAL_ADDRESS = "192.168.0.1"
+MOSQUITTO_BROKER_LOCAL_ADDRESS = "192.168.0.1"   # E.g : "192.168.27.243"
 
 # default is mosquitto
-BROKER_ADDRESS = MOSQUITTO_BROKER_LOCAL_ADDRESS
+BROKER_ADDRESS = AMAZON_BROKER_ADDRESS
 
-TLS_ENABLED = False         # turn on with "tls" argument on command line when invoking this script
+TLS_ENABLED = True         # turn on with "tls" argument on command line when invoking this script
 
 # Quality of Service settings
 PUBLISHER_PUBLISH_QOS = 1     # AWS broker does not support QOS of 2
 PUBLISHER_SUBSCRIBE_QOS = 1   # AWS broker does not support QOS of 2
 
 # Path to the firmware image
-OTA_IMAGE_FILE = "../build/APP_CY8CPROTO-062-4343W/Debug/mtb-example-ota-mqtt.bin"
+OTA_IMAGE_FILE = ""
 
 # Paho MQTT client settings
 MQTT_KEEP_ALIVE = 60 # in seconds
@@ -864,7 +870,7 @@ if __name__ == "__main__":
     print("Infineon Test MQTT Publisher.")
     print("Usage: 'python publisher.py [tls] [-l] [-b <broker>] [-k <kit>] [-f <filepath>]'")
     print("<broker>       | [a] or [amazon] | [e] or [eclipse] | [m] or [mosquitto] | [ml] or [mosquitto_local] |")
-    print("<kit>          CY8CPROTO_062_4343W | CY8CKIT_062S2_43012 | CY8CEVAL_062S2_LAI_4373M2 | CY8CEVAL_062S2_MUR_43439M2 | CY8CPROTO_062S3_4343W |")
+    print("<kit>          CY8CPROTO_062S2_43439 | CY8CPROTO_062_4343W | CY8CKIT_062S2_43012 | CY8CEVAL_062S2_LAI_4373M2 | CY8CEVAL_062S2_MUR_43439M2 | CY8CPROTO_062S3_4343W | KIT_XMC72_EVK_MUR_43439M2 |")
     print("<filepath>     The location of the OTA Image file to server to the device")
     print("Defaults: <non-TLS>")
     print("        : -f " + OTA_IMAGE_FILE)
@@ -899,7 +905,10 @@ if __name__ == "__main__":
         last_arg = arg
 
     if OTA_IMAGE_FILE_NEW == None:
-        OTA_IMAGE_FILE = "../build/APP_" + KIT.replace("_","-") + "/Debug/mtb-example-ota-mqtt.bin"
+        if KIT == "KIT_XMC72_EVK_MUR_43439M2":
+            OTA_IMAGE_FILE = "../build/APP_" + KIT + "/Debug/mtb-example-ota-mqtt.bin"
+        else:
+            OTA_IMAGE_FILE = "../build/APP_" + KIT.replace("_","-") + "/Debug/mtb-example-ota-mqtt.bin"
     else:
         OTA_IMAGE_FILE = OTA_IMAGE_FILE_NEW
 
@@ -944,9 +953,9 @@ if TLS_ENABLED:
         certfile = "eclipse_client.crt"
         keyfile  = "eclipse_client.pem"
     else:
-        ca_certs = "amazon_ca.crt"
-        certfile = "amazon_client.crt"
-        keyfile  = "amazon_private_key.pem"
+        ca_certs = "aws_ca.crt"
+        certfile = "aws_client.crt"
+        keyfile  = "aws_private.key"
     print("Connecting using TLS to '" + BROKER_ADDRESS + ":" + str(BROKER_PORT) + "'" + os.linesep)
 else:
     BROKER_PORT = 1883

@@ -1,9 +1,12 @@
 /******************************************************************************
-* File Name: ota_app_config.h
+* File Name:   ota_app_config.h
 *
-* Description: Contains all the configurations required for the OTA App.
+* Description: This file contains the OTA application level configuration macros.
 *
-********************************************************************************
+* Related Document: See README.md
+*
+*
+*******************************************************************************
 * Copyright 2020-2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
@@ -40,6 +43,7 @@
 #define SOURCE_OTA_APP_CONFIG_H_
 
 #include "cy_ota_config.h"
+#include "cy_ota_api.h"
 
 /***********************************************
  * Connection configuration
@@ -56,17 +60,17 @@
 #define WIFI_SECURITY       (CY_WCM_SECURITY_WPA2_AES_PSK)
 
 /* MQTT Broker endpoint */
-#define MQTT_BROKER_URL     "192.168.0.1"
+#define MQTT_BROKER_URL     "" 
 
 /* Macro to enable/disable TLS */
 #define ENABLE_TLS          (true)
 
 #if (ENABLE_TLS == true)
 /* MQTT Server Port */
-#define MQTT_SERVER_PORT    (8884)
+#define MQTT_SERVER_PORT    (8883)
 #else
 /* MQTT Server Port */
-#define MQTT_SERVER_PORT    (1884)
+#define MQTT_SERVER_PORT    (1883)
 #endif
 
 /* MQTT identifier - less than 17 characters*/
