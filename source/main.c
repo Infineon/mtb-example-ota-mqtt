@@ -3,13 +3,13 @@
 *
 * Description: This code example demonstrates OTA update with PSoC 6 MCU and
 * CYW43xxx connectivity devices. The device establishes a connection with the
-* designated MQTT Broker (Mosquitto is used in this example) and subscribes to
+* designated MQTT Broker (AWS is used in this example) and subscribes to
 * a topic. It periodically checks the job document to see if a new update is
 * available. When a new update is available, it will be downloaded and written
 * to the secondary slot. On the next reboot, MCUBoot will copy the new image
 * over to the primary slot and run the application.
 *
-* Related Document: See Readme.md
+* Related Document: See README.md
 ********************************************************************************
 * Copyright 2020-2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
@@ -117,22 +117,17 @@ int main(void)
     }
 
  #ifdef XMC7200
-    /* Disables and invalidate instruction cache and disable, clean and invalidate data cache for XMC7200 */ 
+    /* Disables and invalidate instruction cache and disable, clean and invalidate data cache for XMC7200 */
     SCB_DisableICache();
     SCB_DisableDCache();
+
     /* Initialize the XMC7200 flash */
     Cy_Flash_Init();
     Cy_Flashc_MainWriteEnable();
  #endif
 
-    /* To avoid compiler warning */
-    (void)result;
-    
     /* Enable global interrupts. */
     __enable_irq();
-
-    /* default for all logging to WARNING */
-    cy_log_init(CY_LOG_WARNING, NULL, NULL);
 
     printf("\r===============================================================\n");
     printf("TEST Application: OTA Update version: %d.%d.%d\n",

@@ -134,11 +134,11 @@ DEFINES+=CYBSP_WIFI_CAPABLE CY_RETARGET_IO_CONVERT_LF_TO_CRLF
 DEFINES+=CY_RTOS_AWARE
 
 # CY8CPROTO-062-4343W board shares the same GPIO for the user button (USER BTN1)
-# and the CYW4343W host wake up pin. Since this example can use the GPIO for  
+# and the CYW4343W host wake up pin. Since this example can use the GPIO for
 # interfacing with the user button, the SDIO interrupt to wake up the host is
 # disabled by setting CY_WIFI_HOST_WAKE_SW_FORCE to '0'.
-# 
-# If you want the host wake up feature on CY8CPROTO-062-4343W board, change the GPIO pin 
+#
+# If you want the host wake up feature on CY8CPROTO-062-4343W board, change the GPIO pin
 # for USER BTN in design/hardware & comment the below DEFINES line. For other
 # targets commenting the below DEFINES line is sufficient.
 DEFINES+=CY_WIFI_HOST_WAKE_SW_FORCE=0
@@ -237,7 +237,7 @@ ifneq ($(PLATFORM), XMC7200)
 COMPONENTS+=OTA_PSOC_062
 endif
 
-# Starting from the 4.0 version of the ota-update library, the library is now fully separated from the MCUBootloader. 
+# Starting from the 4.0 version of the ota-update library, the library is now fully separated from the MCUBootloader.
 # This means that it can function independently and work with any bootloader.
 # This code example only supports MCUboot at this moment.
 CY_BOOTLOADER=MCUBOOT
@@ -263,13 +263,6 @@ DEFINES+=OTA_SUPPORT=1\
          APP_VERSION_MAJOR=$(APP_VERSION_MAJOR)\
          APP_VERSION_MINOR=$(APP_VERSION_MINOR)\
          APP_VERSION_BUILD=$(APP_VERSION_BUILD)
-
-# To enable the MQTT and secure socket logs.
-#OTA_MQTT_DEBUG=1
-#DEFINES+=OTA_MQTT_DEBUG=1
-
-DEFINES+=ENABLE_OTA_LOGS\
-         ENABLE_OTA_BOOTLOADER_ABSTRACTION_LOGS
 
 # Enable the CY_PYTHON_PATH requirement.
 CY_PYTHON_REQUIREMENT=true
@@ -325,10 +318,10 @@ CY_GETLIBS_SHARED_PATH=../
 #
 CY_GETLIBS_SHARED_NAME=mtb_shared
 
-# Absolute path to the compiler's "bin" directory. The variable name depends on the 
+# Absolute path to the compiler's "bin" directory. The variable name depends on the
 # toolchain used for the build. Refer to the ModusToolbox user guide to get the correct
 # variable name for the toolchain used in your build.
-# 
+#
 # The default depends on the selected TOOLCHAIN (GCC_ARM uses the ModusToolbox
 # software provided compiler by default).
 CY_COMPILER_GCC_ARM_DIR=

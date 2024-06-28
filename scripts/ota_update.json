@@ -7,7 +7,7 @@
   "Board":"APP_CY8CPROTO_062S2_43439",
   "Version":"1.0.0",
   "Connection":"MQTT",
-  "Broker":"",
-  "Port":"8883",
+  "Broker":"192.168.0.10",
+  "Port":"8884",
   "UniqueTopicName":"replace"
 }

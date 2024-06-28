@@ -110,6 +110,8 @@ const char * my_topics[ MQTT_TOPIC_FILTER_NUM ] =
         ".........base64 data.......\n" \
         "-----END CERTIFICATE-------\n"
 */
+#define USING_CLIENT_CERTIFICATE    (true)
+
 #define CLIENT_CERTIFICATE ""
 
 /* Private Key
@@ -119,6 +121,8 @@ const char * my_topics[ MQTT_TOPIC_FILTER_NUM ] =
         "...........base64 data.........\n" \
         "-----END RSA PRIVATE KEY-------\n"
 */
+#define USING_CLIENT_KEY    (true)
+
 #define CLIENT_KEY ""
 
 #endif /* SOURCE_OTA_APP_CONFIG_H_ */

@@ -64,7 +64,7 @@
 #define WIFI_CONN_RETRY_DELAY_MS            (500)
 
 /* Application ID */
-#define APP_ID                              (0)  
+#define APP_ID                              (0)
 
 /*******************************************************************************
 * Forward declaration
@@ -98,10 +98,14 @@ cy_ota_network_params_t ota_network_params =
         {
             .root_ca = ROOT_CA_CERTIFICATE,
             .root_ca_size = sizeof(ROOT_CA_CERTIFICATE),
+        #if (USING_CLIENT_CERTIFICATE == true)
             .client_cert = CLIENT_CERTIFICATE,
             .client_cert_size = sizeof(CLIENT_CERTIFICATE),
+        #endif
+        #if (USING_CLIENT_KEY == true)
             .private_key = CLIENT_KEY,
             .private_key_size = sizeof(CLIENT_KEY),
+        #endif
         },
     #endif
         .awsIotMqttMode = AWS_IOT_MQTT_MODE
@@ -147,10 +151,6 @@ cy_ota_storage_interface_t ota_interfaces =
  *******************************************************************************/
 void ota_task(void *args)
 {
-
-    /* default for OTA logging to NOTICE */
-    cy_ota_set_log_level(CY_LOG_NOTICE);
-
     /* initialize OTA storage */
     if (CY_RSLT_SUCCESS != cy_ota_storage_init())
     {
@@ -355,8 +355,8 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
 
                 case CY_OTA_STATE_JOB_PARSE:
                     printf("APP CB OTA PARSE JOB: '%.*s' \n",
-                            strlen(cb_data->json_doc),
-                            cb_data->json_doc);
+                    strlen(cb_data->json_doc),
+                    cb_data->json_doc);
                     break;
 
                 case CY_OTA_STATE_JOB_REDIRECT:
@@ -366,7 +366,7 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
                 case CY_OTA_STATE_DATA_CONNECT:
                     printf("APP CB OTA CONNECT FOR DATA using ");
                     printf("MQTT: %s:%d \n", cb_data->broker_server.host_name,
-                            cb_data->broker_server.port);
+                    cb_data->broker_server.port);
                     break;
 
                 case CY_OTA_STATE_DATA_DOWNLOAD:
@@ -374,8 +374,7 @@ cy_ota_callback_results_t ota_callback(cy_ota_cb_struct_t *cb_data)
                     /* NOTE:
                      *  MQTT - json_doc holds the MQTT JSON request doc
                      */
-                    printf("MQTT: '%.*s' \n", strlen(cb_data->json_doc),
-                            cb_data->json_doc);
+                    printf("MQTT: '%.*s' \n", strlen(cb_data->json_doc), cb_data->json_doc);
                     printf("topic: '%s'\n\n", cb_data->unique_topic);
                     break;
 

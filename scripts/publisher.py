@@ -195,8 +195,10 @@ DEBUG_LOG_STRING = "0"
 
 # Board or Target name
 BOARD = "APP_CY8CPROTO_062S2_43439"
+BUILD_CONFIG = "Debug"
 
 print("BOARD:",BOARD)
+print("BUILD_CONFIG:",BUILD_CONFIG)
 
 # Kit or Device name
 KIT = BOARD.replace("APP_","")
@@ -214,7 +216,7 @@ PUBLISHER_DIRECT_REQUEST_TOPIC = ""
 
 
 BAD_JSON_DOC = "MALFORMED JSON DOCUMENT"            # Bad incoming message
-UPDATE_AVAILABLE_REQUEST = "Update Availability"    # Device requests if there is an Update avaialble
+UPDATE_AVAILABLE_REQUEST = "Update Availability"    # Device requests if there is an Update available
 SEND_UPDATE_REQUEST = "Request Update"              # Device requests Publisher send the OTA Image
 SEND_DIRECT_UPDATE = "Send Direct Update"           # Device sent Update Direct request
 SEND_CHUNK = "Request Data Chunk"                   # Device sent Request for a chunk of the data file
@@ -242,7 +244,7 @@ JSON_JOB_MESSAGE_FILE = "ota_update.json"
 # Mosquitto works sometimes - it is a test server for the Mosquitto project
 #
 # Set the Broker using command line arguments "-b amazon"
-AMAZON_BROKER_ADDRESS = "xxxxxxxxx-ats.iot.us-west-1.amazonaws.com"       # E.g : "b9m07l8775v3ky-ats.iot.us-west-2.amazonaws.com"
+AMAZON_BROKER_ADDRESS = "xxxxxxxxx-ats.iot.us-west-2.amazonaws.com"
 
 # Set the Broker using command line arguments "-b eclipse"
 ECLIPSE_BROKER_ADDRESS = "mqtt.eclipse.org"
@@ -251,12 +253,12 @@ ECLIPSE_BROKER_ADDRESS = "mqtt.eclipse.org"
 MOSQUITTO_BROKER_ADDRESS = "test.mosquitto.org"
 
 # Set the Broker using command line arguments "-b mosquitto_local"
-MOSQUITTO_BROKER_LOCAL_ADDRESS = "192.168.0.1"   # E.g : "192.168.27.243"
+MOSQUITTO_BROKER_LOCAL_ADDRESS = "192.168.0.10"
 
-# default is mosquitto
-BROKER_ADDRESS = AMAZON_BROKER_ADDRESS
+# default is local Mosquitto
+BROKER_ADDRESS = MOSQUITTO_BROKER_LOCAL_ADDRESS
 
-TLS_ENABLED = True         # turn on with "tls" argument on command line when invoking this script
+TLS_ENABLED = False         # turn on with "tls" argument on command line when invoking this script
 
 # Quality of Service settings
 PUBLISHER_PUBLISH_QOS = 1     # AWS broker does not support QOS of 2
@@ -828,7 +830,7 @@ def publisher_loop():
             pub_client.tls_insecure_set(True)
         else:
             pub_client.tls_set(ca_certs, certfile, keyfile)
-        
+
     pub_client.connect(BROKER_ADDRESS, BROKER_PORT, MQTT_KEEP_ALIVE)
     while pub_client.connected_flag == False:
         pub_client.loop(0.1)
@@ -880,7 +882,7 @@ if __name__ == "__main__":
     print("################################################################################################################################")
     last_arg = ""
     OTA_IMAGE_FILE_NEW = None
-    
+
     for i, arg in enumerate(sys.argv):
         if arg == "-h" or arg == "--help":
             sys.exit()
@@ -905,10 +907,11 @@ if __name__ == "__main__":
         last_arg = arg
 
     if OTA_IMAGE_FILE_NEW == None:
-        if KIT == "KIT_XMC72_EVK_MUR_43439M2":
-            OTA_IMAGE_FILE = "../build/APP_" + KIT + "/Debug/mtb-example-ota-mqtt.bin"
+        OTA_IMAGE_FILE = "/" + BUILD_CONFIG + "/mtb-example-ota-mqtt.bin"
+        if KIT.startswith("KIT_XMC7"):
+            OTA_IMAGE_FILE = "../build/APP_" + KIT + OTA_IMAGE_FILE
         else:
-            OTA_IMAGE_FILE = "../build/APP_" + KIT.replace("_","-") + "/Debug/mtb-example-ota-mqtt.bin"
+            OTA_IMAGE_FILE = "../build/APP_" + KIT.replace("_","-") + OTA_IMAGE_FILE
     else:
         OTA_IMAGE_FILE = OTA_IMAGE_FILE_NEW
 
