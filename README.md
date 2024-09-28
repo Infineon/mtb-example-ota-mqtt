@@ -14,11 +14,11 @@ Build the MCUboot-based bootloader application outside of the OTA MQTT applicati
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ota-mqtt)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6ImNoZXR0aWFubmFuIiwiRG9jIHZlcnNpb24iOiI3LjIuMCIsIkRvYyBMYW5ndWFnZSI6IkVuZ2xpc2giLCJEb2MgRGl2aXNpb24iOiJNQ0QiLCJEb2MgQlUiOiJJQ1ciLCJEb2MgRmFtaWx5IjoiV0lGSSJ9)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6InZhaXJhbXV0aHUgcmFtYXNhbXkiLCJEb2MgdmVyc2lvbiI6IjcuMy4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJXSUZJIn0=)
 
 ## Requirements
 
-- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.1 or later (tested with v3.2)
+- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.2 or later (tested with v3.2)
 - Board support package (BSP) minimum required version: 4.0.0
 - Programming language: C
 - Other tools: Python v3.8.10 or later
@@ -29,6 +29,7 @@ Build the MCUboot-based bootloader application outside of the OTA MQTT applicati
 - GNU Arm&reg; Embedded Compiler v11.3.1 (`GCC_ARM`) – Default value of `TOOLCHAIN`
 - Arm&reg; Compiler v6.16 (`ARM`)
 - IAR C/C++ Compiler v9.30.1 (`IAR`)
+
 
 ## Supported kits (make variable 'TARGET')
 
@@ -224,10 +225,10 @@ The [mtb-example-mcuboot-basic](https://github.com/Infineon/mtb-example-mcuboot-
     > **Note:** For Linux and macOS platforms, use `python3` instead of `python` in the following command:
 
       ```
-      python -m pip install -r requirements.txt
+      python -m pip install paho-mqtt==1.6.1
       ```
       ```
-      python -m pip install --upgrade cysecuretools==5.0.0
+      python -m pip install --upgrade cysecuretools
       ```
 
     > **Note:** *cysecuretools* is used for signing the image for XMC7000 MCUs.
@@ -355,13 +356,9 @@ This code example uses the locally installable Mosquitto that runs on your compu
 
 2. Navigate to the *\<OTA_MQTT>/scripts* folder.
 
-3. Run the following command to ensure that the required Python modules are installed.
 
-      ```
-      pip install -r requirements.txt
-      ```
 
-4. Edit the *\<OTA_MQTT>/scripts/publisher.py* file to configure your MQTT publisher (MQTT server).
+3. Edit the *\<OTA_MQTT>/scripts/publisher.py* file to configure your MQTT publisher (MQTT server).
 
    1. Modify the value of the `BOARD` variable to your selected `TARGET` in the following format.
 
@@ -387,7 +384,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
    5. Ensure that the value of the `BROKER_PORT` variable is `8883`.
        > **Note:** If you are using the local MQTT broker (e.g., Mosquitto broker), ensure that the value of `BROKER_PORT` variable is `8884`. Currently in the *publisher.py* file conditional `if-else` block is used to automatically select a `BROKER_PORT` value based on the selected MQTT broker.
 
-5. Ensure that the certificate and key file names in the *\<OTA_MQTT>/scripts* folder and following variables value in the *\<OTA_MQTT>/scripts/publisher.py* file are same.
+4. Ensure that the certificate and key file names in the *\<OTA_MQTT>/scripts* folder and following variables value in the *\<OTA_MQTT>/scripts/publisher.py* file are same.
       - `ca_certs` = "aws_ca.crt"
       - `certfile` = "aws_client.crt"
       - `keyfile`  = "aws_private.key"
@@ -395,7 +392,7 @@ This code example uses the locally installable Mosquitto that runs on your compu
       These variables are present under the `AMAZON BROKER` section at the last line in the *\<OTA_MQTT>/scripts/publisher.py* file.
       > **Note:** If you are using the local MQTT broker (e.g., Mosquitto broker), ensure that the certificate and key file names in the *\<OTA_MQTT>/scripts* folder and these variables value in the *\<OTA_MQTT>/scripts/publisher.py* file under the `MOSQUITTO_BROKER_LOCAL_ADDRESS` section are the same. Currently in the *publisher.py* file, the conditional `if-else` block is used to automatically select the default certificate and key file names based on the selected MQTT broker.
 
-6. Run the *publisher.py* Python script.
+5. Run the *publisher.py* Python script.
 
     The scripts take arguments such as the kit name, broker URL, and file path. For details on the supported arguments and their usage, execute the following command:
 
@@ -706,6 +703,8 @@ File | Description
 *COMPONENT_MCUBOOT/flash/COMPONENT_OTA_PSOC_062/flash_qspi.h* | Contains the declaration of QSPI flash related APIs
 <br>
 
+> **Note:**
+The flash write works only in Active mode for KIT_XMC72_EVK_MUR_43439M2 BSP. Therfore the custom design.modus with System Idle Power Mode set to Active mode is provided for KIT_XMC72_EVK_MUR_43439M2 BSP.
 ### Security
 
 The MCUboot-based bootloader application enables the image authentication feature of the MCUboot library. MCUboot verifies the signature of the image in the primary slot every time before booting. In addition, it verifies the signature of the image in the secondary slot before copying it to the primary slot. When these options are enabled, the public key (*cypress-test-ec-p256.pub*) is embedded within the MCUboot-based bootloader application. The OTA MQTT application is signed using the private key (*cypress-test-ec-p256.pem*) during the post-build steps, the ota-bootloader-abstraction library handles the image signing for the OTA MQTT application.
@@ -715,6 +714,8 @@ The MCUboot-based bootloader application includes a sample public key (*cypress-
 **Do not use this key pair in your end product.** See [Generating a key pair](https://github.com/Infineon/mtb-example-mcuboot-basic/blob/master/README.md#generating-a-key-pair) for generating a new key pair. Once you generated the key pair, copy the keys to the both *\<MCUboot>/keys* and *\<mtb_shared>/ota-bootloader-abstraction/\<tag>/scripts/mcuboot/keys* directories.
 
 > **Note:** See [Security](https://github.com/Infineon/mtb-example-mcuboot-basic/blob/master/README.md#security) to learn more about the image authentication feature of MCUboot.
+
+   Currently this code example uses the TLS v1.2. To use the TLS v1.3, uncomment the MBEDTLS_SSL_PROTO_TLS1_3 and FORCE_TLS_VERSION MBEDTLS_SSL_VERSION_TLS1_3 defines in the mbedtls_user_config.h file. However, note that the socket receive fails if the application establishes TLS v1.3 connection to a server where session tickets are enabled. This is due to a bug in third-party MBEDTLS library.
 
 
 ### Resources and settings
@@ -769,6 +770,7 @@ Document title: *CE230031* – *Over-the-air firmware update using MQTT*
  7.0.0   | Updated to support OTA update middleware v4.0.0<br /> Added support for KIT_XMC72_EVK_MUR_43439M2, CY8CEVAL-062S2-LAI-43439M2, CY8CEVAL-062S2-MUR-4373EM2, CY8CEVAL-062S2-MUR-4373M2 and CY8CPROTO-062S2-43439 kits
  7.1.0   | Updated to support PDL v3.11.0
  7.2.0   | Added support for CY8CEVAL-062S2-CYW955513SDM2WLIPA
+ 7.3.0   | Updated to use v2.X of wifi-core-freertos-lwip-mbedtls.mtb; Disabled D-cache for XMC7000 based BSPs
 <br>
 
 All referenced product or service names and trademarks are the property of their respective owners.

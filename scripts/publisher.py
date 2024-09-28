@@ -324,8 +324,10 @@ def signal_handling(signum,frame):
    terminate = True
 
 # take over the signals (SIGINT - MAC & Linux, SIGBREAK - Windows
-signal.signal(signal.SIGINT,signal_handling)
-signal.signal(signal.SIGBREAK,signal_handling)
+if sys.platform == 'win32':
+    signal.signal(signal.SIGBREAK,signal_handling)
+else:
+    signal.signal(signal.SIGINT,signal_handling)
 
 #==============================================================================
 # Logging functions
