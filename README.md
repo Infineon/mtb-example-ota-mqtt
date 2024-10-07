@@ -14,7 +14,7 @@ Build the MCUboot-based bootloader application outside of the OTA MQTT applicati
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ota-mqtt)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6InZhaXJhbXV0aHUgcmFtYXNhbXkiLCJEb2MgdmVyc2lvbiI6IjcuMy4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJXSUZJIn0=)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzAwMzEiLCJTcGVjIE51bWJlciI6IjAwMi0zMDAzMSIsIkRvYyBUaXRsZSI6Ik92ZXItdGhlLWFpciBmaXJtd2FyZSB1cGRhdGUgdXNpbmcgTVFUVCIsInJpZCI6InZhaXJhbXV0aHUgcmFtYXNhbXkiLCJEb2MgdmVyc2lvbiI6IjcuNC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJXSUZJIn0=)
 
 ## Requirements
 
@@ -27,9 +27,9 @@ Build the MCUboot-based bootloader application outside of the OTA MQTT applicati
 ## Supported toolchains (make variable 'TOOLCHAIN')
 
 - GNU Arm&reg; Embedded Compiler v11.3.1 (`GCC_ARM`) – Default value of `TOOLCHAIN`
-- Arm&reg; Compiler v6.16 (`ARM`)
-- IAR C/C++ Compiler v9.30.1 (`IAR`)
-
+- Arm&reg; Compiler v6.22 (`ARM`)
+- IAR C/C++ Compiler v9.50.2 (`IAR`)
+> **Note:** For `KIT_XMC72_EVK_MUR_43439M2` only GCC_ARM is supported in this version of the CE.
 
 ## Supported kits (make variable 'TARGET')
 
@@ -39,6 +39,7 @@ Build the MCUboot-based bootloader application outside of the OTA MQTT applicati
 - [PSoC&trade; 62S2 Evaluation Kit](https://www.infineon.com/CY8CEVAL-062S2) (`CY8CEVAL-062S2-LAI-4373M2`, `CY8CEVAL-062S2-LAI-43439M2`,`CY8CEVAL-062S2-MUR-43439M2`,  `CY8CEVAL-062S2-MUR-4373EM2`, `CY8CEVAL-062S2-MUR-4373M2`, `CY8CEVAL-062S2-CYW43022CUB`, `CY8CEVAL-062S2-CYW955513SDM2WLIPA`)
 - [PSoC&trade; 62S3 Wi-Fi Bluetooth&reg; Prototyping Kit](https://www.infineon.com/CY8CPROTO-062S3-4343W) (`CY8CPROTO-062S3-4343W`)
 - [XMC7200 Evaluation Kit](https://www.infineon.com/KIT_XMC72_EVK) (`KIT_XMC72_EVK_MUR_43439M2`)
+- [PSoC&trade; 6 AI Evaluation Kit](https://www.infineon.com/CY8CKIT-062S2-AI) (`CY8CKIT-062S2-AI`)
 
 ## Hardware setup
 
@@ -203,6 +204,7 @@ The [mtb-example-mcuboot-basic](https://github.com/Infineon/mtb-example-mcuboot-
    Target      | Supported JSON files
    ----------- |----------------------------------
    CY8CPROTO-062S2-43439 <br> CY8CPROTO-062-4343W <br> CY8CKIT-062S2-43012 <br> CY8CEVAL-062S2-LAI-4373M2 <br> CY8CEVAL-062S2-LAI-43439M2 <br> CY8CEVAL-062S2-MUR-43439M2 <br> CY8CEVAL-062S2-MUR-4373EM2 <br> CY8CEVAL-062S2-MUR-4373M2 <br> CY8CEVAL-062S2-CYW43022CUB <br> CY8CEVAL-062S2-CYW955513SDM2WLIPA | psoc62_2m_ext_overwrite_single.json <br> psoc62_2m_ext_swap_single.json
+   CY8CKIT-062S2-AI | psoc62_2m_ext_overwrite_single.json  <br> **Note:** psoc62_2m_ext_swap_single.json is not supported as CY8CKIT-062S2-AI has Hybrid serial flash.
    CY8CPROTO-062S3-4343W | psoc62_512k_xip_swap_single.json
    KIT_XMC72_EVK_MUR_43439M2 | xmc7200_int_overwrite_single.json <br> xmc7200_int_swap_single.json
 
@@ -705,6 +707,7 @@ File | Description
 
 > **Note:**
 The flash write works only in Active mode for KIT_XMC72_EVK_MUR_43439M2 BSP. Therfore the custom design.modus with System Idle Power Mode set to Active mode is provided for KIT_XMC72_EVK_MUR_43439M2 BSP.
+
 ### Security
 
 The MCUboot-based bootloader application enables the image authentication feature of the MCUboot library. MCUboot verifies the signature of the image in the primary slot every time before booting. In addition, it verifies the signature of the image in the secondary slot before copying it to the primary slot. When these options are enabled, the public key (*cypress-test-ec-p256.pub*) is embedded within the MCUboot-based bootloader application. The OTA MQTT application is signed using the private key (*cypress-test-ec-p256.pem*) during the post-build steps, the ota-bootloader-abstraction library handles the image signing for the OTA MQTT application.
@@ -771,6 +774,7 @@ Document title: *CE230031* – *Over-the-air firmware update using MQTT*
  7.1.0   | Updated to support PDL v3.11.0
  7.2.0   | Added support for CY8CEVAL-062S2-CYW955513SDM2WLIPA
  7.3.0   | Updated to use v2.X of wifi-core-freertos-lwip-mbedtls.mtb; Disabled D-cache for XMC7000 based BSPs
+ 7.4.0   | Added support for CY8CKIT-062S2-AI
 <br>
 
 All referenced product or service names and trademarks are the property of their respective owners.

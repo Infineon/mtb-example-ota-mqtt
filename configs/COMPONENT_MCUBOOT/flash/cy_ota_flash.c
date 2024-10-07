@@ -1068,7 +1068,7 @@ cy_rslt_t cy_ota_mem_write( cy_ota_mem_type_t mem_type, uint32_t addr, void *dat
         }
         else
         {
-            result = cy_ota_mem_write_row_size(mem_type, addr, data, len);
+            result = cy_ota_mem_write_row_size(mem_type, curr_addr, curr_src, chunk_size);
             if(result != CY_RSLT_SUCCESS)
             {
                 return CY_RSLT_TYPE_ERROR;
